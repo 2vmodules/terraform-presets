@@ -1,0 +1,168 @@
+
+"use strict";
+
+const AWSXRay = require('aws-xray-sdk');
+const AWS = AWSXRay.captureAWS(require('aws-sdk'));
+const S3 = new AWS.S3({
+    signatureVersion: "v4",
+    s3ForcePathStyle: true,
+});
+const ssm = new AWS.SSM({
+    region: "${region}",
+});
+
+const Sharp = require("sharp");
+const querystring = require('querystring');
+const crypto = require('crypto');
+
+// set your S3 bucket name here
+
+const BUCKET = "${env}-${name}-media-bucket";
+const SSM_SECRET_KEY = "${env}-${name}-image-resize-secret-key";
+
+function generateSignature(width, height, quality, secretKey) {
+    const resizeParams = `$${width}x$${height}-$${quality}`
+    const signatureString = `$${resizeParams}$${secretKey}`
+
+    return crypto.createHash('sha256').update(signatureString).digest('hex')
+}
+
+exports.handler = async (event, context, callback) => {
+    let response = event.Records[0].cf.response;
+    console.log("Response status code: " + response.status);
+
+    // uncomment to debug:
+    // console.log("Event received:", JSON.stringify(event, null, 2));
+
+    if (response.status == 404) {
+        // Fetching secret key from Parameter Store for signature verification
+        try {
+            const { Parameter } = await ssm.getParameter({ Name: SSM_SECRET_KEY, WithDecryption: true }).promise();
+            var SECRET_KEY = Parameter.Value;
+            console.log('Successfully fetched secret key from parameter store');
+        }
+        catch (error) {
+            console.error('Error fetching secret key:', error);
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Internal Server Error' }),
+            };
+        }
+
+        let request = event.Records[0].cf.request;
+
+        // URI, Eg. /images/100x100/demo.png
+        let path = request.uri;
+
+        // remove the first character to get S3 key, Eg. images/100x100/demo.png
+        // let key = path.substring(1);
+        let key = path;
+
+        console.log("Obtained S3 key: " + key);
+
+        // parse the prefix, width, height and image name
+        // Eg: URI = https://www.amazon.com/images/100x100/demo.png
+        // S3 originalKey = images/demo.png
+        // S3 key = images/100x100/demo.png
+        let prefix, originalKey, match, width, height, quality, method, imageFormat, imageBaseName, imageName, finalName, finalKey;
+
+        match = key.match(/(.*)\/(.*)\/(.*)-(\d+)x(\d+)-(.*)-(.*)\.(.*)/);
+        prefix = match[1];
+        imageBaseName = match[2];
+        width = parseInt(match[4], 10);
+        height = parseInt(match[5], 10);
+        quality = parseInt(match[6], 10);
+        method = match[7];
+        imageFormat = match[8].toLowerCase();
+        imageName = imageBaseName + "." + imageFormat;
+        originalKey = prefix + "/" + imageBaseName + "/" + imageName;
+
+        // we will read target format from query parameter, if need to change it
+        // Eg: /images/100x100/demo.png?format=webp
+        const options = querystring.parse(request.querystring);
+        if (options.format) {
+            imageFormat = options.format;
+        }
+
+        if (options.signature) {
+            console.log("Request signature: " + options.signature);
+            const signature = generateSignature(width, height, quality, SECRET_KEY);
+            console.log("Calculated signature: " + signature);
+            if (signature === options.signature) {
+                console.log("Processing image: " + imageName + " to format " + imageFormat);
+
+                if (imageFormat == "jpg") {
+                    // no image/jpg in media types, convert it to image/jpeg
+                    imageFormat = "jpeg";
+                }
+
+                finalName = imageBaseName + "-" + width + "x" + height + "-" + quality + "-" + method + "." + imageFormat;
+                finalKey = prefix + "/" + imageBaseName + "/" + finalName;
+
+                console.log("Original image path: " + originalKey);
+                console.log("Target image path: " + finalKey);
+
+                return S3.getObject({
+                    Bucket: BUCKET,
+                    Key: originalKey,
+                })
+                .promise()
+                .then((data) => {
+                    console.log("Successfully fetched object " + originalKey + " from bucket " + BUCKET);
+                    return Sharp(data.Body)
+                        .resize(width, height, { fit: method })
+                        .toFormat(imageFormat, { quality: quality })
+                        .toBuffer()
+                })
+                .then((buffer) => {
+                    // save the resized object to S3 bucket
+                    console.log("The image has been resized successfully, start to upload");
+                    return S3.putObject({
+                        Body: buffer,
+                        Bucket: BUCKET,
+                        ContentType: "image/" + imageFormat,
+                        CacheControl: "max-age=31536000",
+                        Key: finalKey,
+                        StorageClass: "STANDARD",
+                    })
+                    .promise()
+                    .then(() => {
+                        console.log("Successfully uploaded resized image to bucket");
+                    })
+                    .catch((err) => {
+                        console.error("Error occurred while uploading image to S3: ", err);
+                        callback(err); 
+                    });
+                    // even if failing to save the object it will send the generated
+                    // image back to viewer below
+                    response.status = 200;
+                    response.body = buffer.toString("base64");
+                    response.bodyEncoding = "base64";
+                    response.headers["content-type"] = [
+                        {
+                            key: "Content-Type",
+                            value: "image/" + imageFormat,
+                        },
+                    ];
+                    console.log("Resized image returned to viewer successfully");
+                    callback(null, response);
+                })
+                .catch((err) => {
+                    console.error("Error during S3 getObject operation:", err);
+                    callback(err);  // Ensure we return an error so that Lambda fails gracefully
+                });
+                console.log("End of image processing");
+            }
+        }
+        else {
+            response.status = 403;
+            response.statusDescription = "Access Denied"
+            response.body = ""
+            callback(null, response);
+        }
+
+    } else {
+        // bypass when the status code is not 404
+        callback(null, response);
+    }
+};
