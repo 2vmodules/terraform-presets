@@ -83,7 +83,7 @@ module "rds" {
   identifier                 = local.name
   engine                     = "postgres"
   engine_version             = var.engine_version
-  auto_minor_version_upgrade = true
+  auto_minor_version_upgrade = false
   instance_class             = var.instance_class
   allocated_storage          = var.allocated_storage
   max_allocated_storage      = var.max_allocated_storage
@@ -156,6 +156,7 @@ resource "aws_security_group" "rds_security_group" {
 
     // Allow traffic from each private subnet
     cidr_blocks = local.allowed_cidr_blocks
+    security_groups = [var.bastion_security_group_id]
   }
 
   // You may need egress rules depending on your use case

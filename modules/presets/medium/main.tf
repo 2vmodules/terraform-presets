@@ -2,21 +2,21 @@ locals {
   cache_envs = {
     CACHE_DRIVER     = "redis"
     SESSION_DRIVER   = "redis"
-    REDIS_HOST       = var.redis_enabled ? format("%s://%s", "tls", module.redis[0].endpoint) : ""
+    REDIS_HOST       = format("%s://%s", "tls", module.redis[0].endpoint)
     QUEUE_CONNECTION = "redis"
   }
   cache_secrets = {
-    REDIS_PASSWORD = var.redis_enabled ? module.redis[0].auth_token_ssm_arn : ""
+    REDIS_PASSWORD = module.redis[0].auth_token_ssm_arn
   }
   db_envs = {
     DB_CONNECTION = "pgsql"
-    DB_HOST       = var.postgres_enabled ? var.postgres_rds_type == "rds" ? module.postgres[0].rds_instance_address[0] : module.postgres[0].cluster_endpoint[0] : ""
+    DB_HOST       = var.postgres_rds_type == "rds" ? module.postgres[0].rds_instance_address[0] : module.postgres[0].cluster_endpoint[0]
     DB_PORT       = "5432"
     DB_DATABASE   = var.postgres_database_name
     DB_USERNAME   = var.postgres_master_username
   }
   db_secrets = {
-    DB_PASSWORD = var.postgres_enabled ? module.postgres[0].rds_instance_master_password_ssm_arn : ""
+    DB_PASSWORD = module.postgres[0].rds_instance_master_password_ssm_arn
   }
 
   # Injecting infra-level db & cache credentials
@@ -34,10 +34,11 @@ locals {
       path                 = container.path
       priority             = container.priority
       port                 = container.port
+      service_domain       = container.service_domain
       envs                 = merge(container.envs, local.db_envs, local.cache_envs)
       secrets              = merge(container.secrets, local.db_secrets, local.cache_secrets)
       health_check         = container.health_check
-      metrics              = container.metrics
+      volumes              = container.volumes
     }
   ]
 
@@ -65,6 +66,10 @@ module "vpc" {
   enable_nat_gateway = var.enable_nat_gateway
   single_nat_gateway = var.single_nat_gateway
 
+  ecs_enabled = var.ecs_enabled
+  postgres_enabled = var.postgres_enabled
+
+
 }
 
 module "alb" {
@@ -81,8 +86,8 @@ module "alb" {
   tags   = var.tags
 
   domain_name     = var.domain_name
-  cdn_domain_name = "cdn.${var.domain_name}"
-
+  cdn_domain_name = var.cdn_domain_name
+  ecs_enabled = var.ecs_enabled
   vpc_id      = module.vpc.vpc_id
   vpc_subnets = module.vpc.public_subnets
 
@@ -92,6 +97,11 @@ module "alb" {
   cdn_enabled         = var.cdn_enabled
   cdn_buckets         = local.public_bucket_list
   cdn_optimize_images = var.cdn_optimize_images
+  lambda_image_url    = var.lambda_image_url
+  lambda_region       = var.lambda_region
+  lambda_memory_size  = var.lambda_memory_size
+  lambda_private_subnets = module.vpc.private_subnets
+  lambda_security_group  = [module.alb.alb_aws_security_group_id]
 
 }
 
@@ -127,48 +137,19 @@ module "ecs" {
   name   = var.name
   tags   = var.tags
 
-  vpc_id                  = module.vpc.vpc_id
-  vpc_subnets             = module.vpc.private_subnets
+  vpc_id             = module.vpc.vpc_id
+  vpc_subnets        = module.vpc.private_subnets
+  alb_security_group = module.alb.alb_aws_security_group_id
+  alb_listener_arn   = module.alb.alb_listener_https_arn
   vpc_private_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  alb_security_group      = module.alb.alb_aws_security_group_id
-  alb_listener_arn        = module.alb.alb_listener_https_arn
 
   cluster_name = var.ecs_cluster_name
   containers   = local.final_ecs_containers
 
 }
 
-module "ecs-monitor" {
-  count  = var.ecs_monitoring_enabled ? 1 : 0
-  source = "../../aws/ecs-monitor"
-
-  providers = {
-    aws.main      = aws.main
-    aws.us_east_1 = aws.us_east_1
-  }
-
-  region = var.region
-  env    = var.env
-  name   = var.name
-  tags   = var.tags
-
-  vpc_id                  = module.vpc.vpc_id
-  vpc_subnets             = module.vpc.private_subnets
-  vpc_private_cidr_blocks = module.vpc.private_subnets_cidr_blocks
-  alb_security_group      = module.alb.alb_aws_security_group_id
-  alb_listener_arn        = module.alb.alb_listener_https_arn
-
-  ecs_cluster_id                     = module.ecs[0].ecs_cluster_id
-  ecs_cloudwatch_group_name          = module.ecs[0].ecs_cloudwatch_group_name
-  ecs_security_group_ids             = module.ecs[0].ecs_security_group_ids
-  ecs_service_discovery_namespace_id = module.ecs[0].ecs_service_discovery_namespace_id
-  ecs_task_role_arn                  = module.ecs[0].ecs_task_role_arn
-  ecs_exec_role_arn                  = module.ecs[0].ecs_task_exec_role_arn
-
-
-}
-
 module "postgres" {
+  bastion_security_group_id = module.ec2[0].security_group_id
   count  = var.postgres_enabled == true ? 1 : 0
   source = "../../aws/postgres"
 
@@ -264,18 +245,13 @@ module "s3" {
   for_each = { for idx, bucket in var.s3_bucket_list : idx => bucket }
   source   = "../../aws/s3"
 
-  providers = {
-    aws.main   = aws.main
-    aws.backup = aws.backup
-  }
-
   region = var.region
   env    = var.env
   tags   = var.tags
 
-  name        = each.value["name"]
-  public      = each.value["public"]
-  replication = each.value["replication"]
+  name       = each.value["name"]
+  public     = each.value["public"]
+  versioning = each.value["versioning"]
 }
 
 module "cloudtrail" {
@@ -288,4 +264,25 @@ module "cloudtrail" {
   tags   = var.tags
 
   log_retention_days = var.cloudtrail_log_retention_days
+}
+
+module "ses" {
+  count  = var.aws_email_service == true ? 1 : 0
+  source = "../../aws/ses"
+  aws_email_domain = var.domain_name
+  mail_from_alias  = var.mail_from_alias
+}
+
+module "elasticsearch" {
+  count  = var.elasticsearch_enabled == true ? 1 : 0
+  source = "../../aws/elasticsearch"
+
+  env                   = var.env
+  name                  = var.name
+  vpc_id                = module.vpc.vpc_id
+  subnets               = module.vpc.private_subnets
+  elasticsearch_version = var.elasticsearch_version
+  instance_type         = var.elasticsearch_instance_type
+  ebs_volume_size       = var.elasticsearch_ebs_volume_size
+  tags                  = var.tags
 }

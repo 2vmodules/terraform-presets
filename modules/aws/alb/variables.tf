@@ -1,11 +1,11 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "lambda_region" {
   type    = string
-  default = "us-east-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -66,4 +66,27 @@ variable "cdn_buckets" {
     }
     # Add more buckets as needed
   ]
+}
+
+variable "lambda_image_url" {
+  type    = string
+  default = null
+}
+
+variable "lambda_memory_size" {
+  type = number
+  default = 128
+}
+
+variable "lambda_private_subnets" {
+  type = list(string)
+}
+
+variable "lambda_security_group" {
+  type = list(string)
+}
+
+variable "ecs_enabled" {
+  type    = bool
+  default = false
 }

@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -77,4 +77,16 @@ variable "enable_dns_support" {
   type        = bool
   default     = true
   description = "Should be true to enable DNS support in the VPC"
+}
+
+variable "postgres_enabled" {
+  type        = bool
+  default     = false
+  description = ""
+}
+
+variable "ecs_enabled" {
+  type        = bool
+  default     = false
+  description = ""
 }

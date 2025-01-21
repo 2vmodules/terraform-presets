@@ -1,9 +1,25 @@
 locals {
 
-  containers_map                   = { for i, container in var.containers : tostring(i) => container }
+  containers_map = { for i, container in var.containers : tostring(i) => container }
   load_balanced_container_keys     = [for i, container in local.containers_map : i if container.path != ""]
-  load_balanced_container_keys_map = tomap({ for k, v in local.load_balanced_container_keys : v => k })
-  load_balanced_containers         = [for key in local.load_balanced_container_keys : lookup(local.containers_map, key)]
+  load_balanced_containers = flatten([
+    for key, container in local.containers_map : [
+      for path in container.path : {
+        name         = container.name
+        path         = path
+        port         = container.port
+        priority     = container.priority
+        health_check = container.health_check
+        service_domain = container.service_domain
+        key          = key # Keep original key
+      } if length(path) > 0 && length(container.service_domain) > 0
+    ]
+  ])
+
+  # Ensure mapping aligns with the original container keys
+  load_balanced_container_keys_map = {
+    for idx, container in var.containers : idx => idx
+  }
 
   ### compact() would be better, but it only works with list of strings, while we have list of objects
   ### https://github.com/hashicorp/terraform/issues/28264
@@ -21,10 +37,14 @@ locals {
 }
 
 resource "aws_alb_listener_rule" "https_listener_rule" {
-  for_each = { for idx, container in local.load_balanced_containers : idx => container }
+  for_each = {
+    for idx, container in local.containers_map :
+    idx => container
+    if length(container.path) > 0
+  }
 
   listener_arn = var.alb_listener_arn
-  priority     = each.value["priority"]
+  priority     = each.value["priority"] 
 
   action {
     type             = "forward"
@@ -33,16 +53,18 @@ resource "aws_alb_listener_rule" "https_listener_rule" {
 
   condition {
     path_pattern {
-      values = [each.value["path"]]
+      values = each.value.path
     }
   }
 
-  # condition {
-  #   http_header {
-  #     http_header_name = "X-Custom-Header"
-  #     values           = [var.custom_origin_host_header]
-  #   }
-  # }
+  dynamic "condition" {
+    for_each = length(each.value.service_domain) > 0 ? [1] : []
+    content {
+      host_header {
+        values = [each.value.service_domain]
+      }
+    }
+  }
 
   tags = merge({
     Name = each.value["name"]
@@ -50,7 +72,13 @@ resource "aws_alb_listener_rule" "https_listener_rule" {
 }
 
 resource "aws_alb_target_group" "service_target_group" {
-  for_each             = { for idx, container in local.load_balanced_containers : idx => container }
+  for_each = {
+    for idx, container in local.containers_map :
+    idx => container
+    if length(container.path) > 0
+  }
+
+  # name                 = "${each.value["name"]}-${each.key}"
   name                 = each.value["name"]
   port                 = each.value["port"]
   protocol             = "HTTP"
@@ -60,16 +88,15 @@ resource "aws_alb_target_group" "service_target_group" {
 
   dynamic "health_check" {
     for_each = length(each.value.health_check) == 0 ? [] : [1]
-
     content {
-      healthy_threshold   = 2
-      unhealthy_threshold = 2
-      interval            = 60
-      matcher             = each.value.health_check["matcher"]
-      path                = each.value.health_check["path"]
-      port                = "traffic-port"
-      protocol            = "HTTP"
-      timeout             = 30
+      healthy_threshold   = lookup(each.value.health_check, "healthy_threshold", 2)
+      unhealthy_threshold = lookup(each.value.health_check, "unhealthy_threshold", 2)
+      interval            = lookup(each.value.health_check, "interval", 60)
+      matcher             = lookup(each.value.health_check, "matcher", "200")
+      path                = lookup(each.value.health_check, "path", "/")
+      port                = lookup(each.value.health_check, "port", "traffic-port")
+      protocol            = lookup(each.value.health_check, "protocol", "HTTP")
+      timeout             = lookup(each.value.health_check, "timeout", 30)
     }
   }
 

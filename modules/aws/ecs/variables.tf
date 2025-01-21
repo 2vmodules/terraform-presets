@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -25,10 +25,6 @@ variable "vpc_subnets" {
   type = list(string)
 }
 
-variable "vpc_private_cidr_blocks" {
-  type = list(string)
-}
-
 variable "alb_security_group" {
   type = string
 }
@@ -46,6 +42,10 @@ variable "cluster_name" {
   type = string
 }
 
+variable "vpc_private_cidr_blocks" {
+  type = list(string)
+}
+
 variable "containers" {
   type = list(object({
     name                 = string
@@ -57,13 +57,23 @@ variable "containers" {
     max_count            = number
     target_cpu_threshold = number
     target_mem_threshold = number
-    path                 = string
+    path                 = list(string)
     port                 = number
+    service_domain       = string
     priority             = number
     envs                 = map(string)
     secrets              = map(string)
     health_check         = map(string)
-    metrics              = map(string)
+    volumes = optional(list(object({
+      name                       = string
+      container_path             = string
+      read_only                  = optional(bool)
+      efs_file_system_id         = optional(string)
+      efs_access_point_id        = optional(string)
+      efs_root_directory         = optional(string)
+      efs_transit_encryption     = optional(string)
+      efs_transit_encryption_port= optional(number)
+    })), [])
   }))
   default = [
     {
@@ -76,21 +86,29 @@ variable "containers" {
       max_count            = 10
       target_cpu_threshold = 75
       target_mem_threshold = 80
-      path                 = "/"
+      path                 = ["/"]
       priority             = 20
       port                 = 8080
+      service_domain       = "domaon.example.com"
       envs                 = { ENV_VAR1 = "value1" }
-      secrets              = { SECRET1 = "arn:aws:ssm:us-west-1:awsAccountID:parameter/secret1" }
+      secrets              = { SECRET1 = "arn:aws:ssm:eu-central-1:awsAccountID:parameter/secret1" }
 
       health_check = {
         matcher = "200"
         path    = "/"
       }
-
-      metrics = {
-        path = "/metrics"
-        port = "8083"
-      }
+      volumes = [
+        {
+          name                       = "web-container-efs-storage"
+          container_path             = "/opt/web-container-data"
+          read_only                  = false
+          efs_file_system_id         = "fs-abcdef12345"
+          efs_access_point_id        = "fsap-1234567890abcdef"
+          efs_root_directory         = "/web-container"
+          efs_transit_encryption     = "ENABLED"
+          efs_transit_encryption_port= 2999
+        }
+      ]
     },
     {
       name                 = "api-container"
@@ -102,22 +120,29 @@ variable "containers" {
       max_count            = 10
       target_cpu_threshold = 75
       target_mem_threshold = 80
-      path                 = "/api"
+      path                 = ["/api"]
       priority             = 10
       port                 = 8081
+      service_domain       = "domaon.example.com"
       envs                 = { ENV_VAR1 = "value1" }
-      secrets              = { SECRET1 = "arn:aws:ssm:us-west-1:awsAccountID:parameter/secret1" }
+      secrets              = { SECRET1 = "arn:aws:ssm:eu-central-1:awsAccountID:parameter/secret1" }
 
       health_check = {
         matcher = "200"
         path    = "/"
       }
-
-      metrics = {
-        path = "/metrics"
-        port = "9000"
-      }
-
+      volumes = [
+        {
+          name                       = "api-container-efs-storage"
+          container_path             = "/opt/api-container-data"
+          read_only                  = false
+          efs_file_system_id         = "fs-abcdef12345"
+          efs_access_point_id        = "fsap-1234567890abcdef"
+          efs_root_directory         = "/api-container"
+          efs_transit_encryption     = "ENABLED"
+          efs_transit_encryption_port= 2999
+        }
+      ]
     }
     # Add more containers as needed
   ]

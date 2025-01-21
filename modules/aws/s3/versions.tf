@@ -4,10 +4,7 @@ terraform {
   #   backend "s3" {}
 
   required_providers {
-    aws = {
-        version = ">= 5.25.0"
-        configuration_aliases = [aws.main, aws.backup]
-    }
+    aws   = ">= 4.38.0"
     local = ">= 2.2.2"
   }
 }

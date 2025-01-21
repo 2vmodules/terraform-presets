@@ -8,7 +8,6 @@
     "license": "Apache-2.0",
     "dependencies": {
         "aws-sdk": "^2.889.0",
-        "aws-xray-sdk": "^3.10.1",
         "axios": "^1.0.0",
         "salted-md5": "^4.0.5",
         "sharp": "^0.32.6"
