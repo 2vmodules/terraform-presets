@@ -1,15 +1,15 @@
-resource "local_file" "lambda_function" {
-  count = var.cdn_optimize_images ? 1 : 0
+# resource "local_file" "lambda_function" {
+#   count = var.cdn_optimize_images ? 1 : 0
 
-  content = templatefile(
-    "${path.module}/image-resize/index.js.tmpl",
-    {
-      env  = var.env
-      name = var.name
-    }
-  )
-  filename = "${path.module}/image-resize/index.js"
-}
+#   content = templatefile(
+#     "${path.module}/image-resize/index.js.tmpl",
+#     {
+#       env  = var.env
+#       name = var.name
+#     }
+#   )
+#   filename = "${path.module}/image-resize/index.js"
+# }
 
 # data "archive_file" "lambda_function" {
 #   type        = "zip"

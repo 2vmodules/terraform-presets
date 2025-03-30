@@ -147,3 +147,34 @@ variable "containers" {
     # Add more containers as needed
   ]
 }
+
+
+variable "loki_enabled" {
+  type    = bool
+  default = false
+  description = "Whether to enable Loki logging for ECS tasks"
+}
+
+variable "grafana_domain" {
+  type    = string
+  default = "grafana.example.com"
+  description = "Domain name for Grafana (required if loki_enabled is true)"
+}
+
+variable "loki_ec2_instance_type" {
+  type    = string
+  default = "t3.medium"
+  description = "Instance type for EC2 running Loki and Grafana"
+}
+
+variable "loki_ec2_key_name" {
+  type    = string
+  default = ""
+  description = "SSH key pair name for EC2 instance"
+}
+
+variable "grafana_admin_password" {
+  type    = string
+  default = "StrongPassword"
+  description = "The Secure Password for Grafana"
+}

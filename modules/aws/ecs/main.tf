@@ -44,6 +44,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
     operating_system_family = "LINUX"
     cpu_architecture        = "ARM64"
   }
+  
   dynamic "volume" {
     for_each = each.value.volumes
     content {
@@ -68,27 +69,27 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
     }
   }
 
-  container_definitions = jsonencode([
-    {
-      name    = each.value["name"]
-      image   = each.value["image"]
-      command = each.value["command"]
-      cpu     = each.value["cpu"]
-      memory  = each.value["memory"]
+  container_definitions = jsonencode(concat(
+    [for container in [each.value] : {
+      name    = container["name"]
+      image   = container["image"]
+      command = container["command"]
+      cpu     = container["cpu"]
+      memory  = container["memory"]
       portMappings = [
         {
-          containerPort = each.value["port"]
+          containerPort = container["port"]
         }
       ]
 
-      environment = [for key, value in each.value["envs"] :
+      environment = [for key, value in container["envs"] :
         {
           name  = key
           value = value
         }
       ]
 
-      secrets = [for key, value in each.value["secrets"] :
+      secrets = [for key, value in container["secrets"] :
         {
           name      = key
           valueFrom = value
@@ -96,24 +97,56 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
       ]
 
       mountPoints = [
-        for v in each.value.volumes : {
+        for v in container.volumes : {
           containerPath = v.container_path
           sourceVolume  = v.name
           readOnly      = coalesce(v.read_only, false)
         }
       ]
 
+      logConfiguration = var.loki_enabled ? {
+        logDriver = "awsfirelens"
+        options = {
+          "Name"               = "loki"
+          "Host"              = aws_instance.loki_grafana[0].private_ip
+          "Port"              = "3100"
+          "Labels"            = "{job=\"${container["name"]}\""
+          "LabelKeys"         = "container_name,ecs_task_definition,source,ecs_cluster"
+          "DropSingleKey"     = "true"
+          "RemoveKeys"        = "container_id,ecs_task_arn"
+          "AutoRetryRequests" = "true"
+          "LineFormat"        = "key_value"
+        }
+      } : {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
+          "awslogs-region"        = var.region
+          "awslogs-stream-prefix" = container["name"]
+        }
+      }
+    }],
+    var.loki_enabled ? [{
+      name      = "log_router"
+      image     = "grafana/fluent-bit-plugin-loki:1.5.0-amd64"
+      essential = true
+      firelensConfiguration = {
+        type = "fluentbit"
+        options = {
+          "enable-ecs-log-metadata" = "true"
+        }
+      }
       logConfiguration = {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
           "awslogs-region"        = var.region
-          "awslogs-stream-prefix" = each.value["name"]
+          "awslogs-stream-prefix" = "firelens"
         }
       }
-
-    }
-  ])
+      memoryReservation = 50
+    }] : []
+  ))
 }
 
 resource "aws_service_discovery_private_dns_namespace" "service_discovery_namespace" {

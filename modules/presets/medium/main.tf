@@ -146,6 +146,11 @@ module "ecs" {
   cluster_name = var.ecs_cluster_name
   containers   = local.final_ecs_containers
 
+  loki_enabled             = var.loki_enabled
+  grafana_domain           = var.grafana_domain
+  loki_ec2_instance_type   = var.loki_ec2_instance_type
+  loki_ec2_key_name        = var.loki_ec2_key_name
+  grafana_admin_password   = var.grafana_admin_password
 }
 
 module "postgres" {
