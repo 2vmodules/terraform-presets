@@ -74,7 +74,7 @@ variable "lambda_image_url" {
 }
 
 variable "lambda_memory_size" {
-  type = number
+  type    = number
   default = 128
 }
 
@@ -89,4 +89,29 @@ variable "lambda_security_group" {
 variable "ecs_enabled" {
   type    = bool
   default = false
+}
+
+variable "lambda_bucket_name" {
+  type    = string
+  default = null
+}
+
+variable "ssm_secret_key" {
+  type    = string
+  default = null
+}
+
+variable "document_data_api_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_pdf_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_docx_url" {
+  type    = string
+  default = null
 }

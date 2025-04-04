@@ -155,7 +155,7 @@ resource "aws_security_group" "rds_security_group" {
     protocol  = "tcp"
 
     // Allow traffic from each private subnet
-    cidr_blocks = local.allowed_cidr_blocks
+    cidr_blocks     = local.allowed_cidr_blocks
     security_groups = [var.bastion_security_group_id]
   }
 

@@ -56,7 +56,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
           root_directory          = coalesce(efs_volume_configuration.value.efs_root_directory, "/")
           transit_encryption      = coalesce(efs_volume_configuration.value.efs_transit_encryption, "ENABLED")
           transit_encryption_port = coalesce(efs_volume_configuration.value.efs_transit_encryption_port, 2999)
-          
+
           dynamic "authorization_config" {
             for_each = efs_volume_configuration.value.efs_access_point_id != null ? [efs_volume_configuration.value] : []
             content {
@@ -226,10 +226,10 @@ resource "aws_security_group" "ecs" {
   }
 
   ingress {
-    from_port       = each.value["port"]
-    to_port         = each.value["port"]
-    protocol        = "tcp"
-    cidr_blocks     = var.vpc_private_cidr_blocks
+    from_port   = each.value["port"]
+    to_port     = each.value["port"]
+    protocol    = "tcp"
+    cidr_blocks = var.vpc_private_cidr_blocks
   }
 
   egress {
@@ -427,9 +427,9 @@ resource "aws_iam_role_policy_attachment" "ecr_pull_assume_role" {
 
 
 resource "aws_vpc_endpoint" "ssm_messages" {
-  vpc_id            = var.vpc_id
-  service_name      = "com.amazonaws.${var.region}.ssmmessages"
-  vpc_endpoint_type = "Interface"
+  vpc_id              = var.vpc_id
+  service_name        = "com.amazonaws.${var.region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
   private_dns_enabled = true
   security_group_ids = [
     var.alb_security_group

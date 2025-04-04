@@ -105,14 +105,14 @@ variable "ecs_containers" {
     secrets              = map(string)
     health_check         = map(string)
     volumes = optional(list(object({
-      name                       = string
-      container_path             = string
-      read_only                  = optional(bool)
-      efs_file_system_id         = optional(string)
-      efs_access_point_id        = optional(string)
-      efs_root_directory         = optional(string)
-      efs_transit_encryption     = optional(string)
-      efs_transit_encryption_port= optional(number)
+      name                        = string
+      container_path              = string
+      read_only                   = optional(bool)
+      efs_file_system_id          = optional(string)
+      efs_access_point_id         = optional(string)
+      efs_root_directory          = optional(string)
+      efs_transit_encryption      = optional(string)
+      efs_transit_encryption_port = optional(number)
     })), [])
   }))
   default = [
@@ -139,14 +139,14 @@ variable "ecs_containers" {
       }
       volumes = [
         {
-          name                       = "web-container-efs-storage"
-          container_path             = "/opt/web-container-data"
-          read_only                  = false
-          efs_file_system_id         = "fs-abcdef12345"
-          efs_access_point_id        = "fsap-1234567890abcdef"
-          efs_root_directory         = "/web-container"
-          efs_transit_encryption     = "ENABLED"
-          efs_transit_encryption_port= 2999
+          name                        = "web-container-efs-storage"
+          container_path              = "/opt/web-container-data"
+          read_only                   = false
+          efs_file_system_id          = "fs-abcdef12345"
+          efs_access_point_id         = "fsap-1234567890abcdef"
+          efs_root_directory          = "/web-container"
+          efs_transit_encryption      = "ENABLED"
+          efs_transit_encryption_port = 2999
         }
       ]
     },
@@ -173,14 +173,14 @@ variable "ecs_containers" {
       }
       volumes = [
         {
-          name                       = "api-container-efs-storage"
-          container_path             = "/opt/api-container-data"
-          read_only                  = false
-          efs_file_system_id         = "fs-abcdef12345"
-          efs_access_point_id        = "fsap-1234567890abcdef"
-          efs_root_directory         = "/api-container"
-          efs_transit_encryption     = "ENABLED"
-          efs_transit_encryption_port= 2999
+          name                        = "api-container-efs-storage"
+          container_path              = "/opt/api-container-data"
+          read_only                   = false
+          efs_file_system_id          = "fs-abcdef12345"
+          efs_access_point_id         = "fsap-1234567890abcdef"
+          efs_root_directory          = "/api-container"
+          efs_transit_encryption      = "ENABLED"
+          efs_transit_encryption_port = 2999
         }
       ]
     }
@@ -448,8 +448,8 @@ variable "lambda_region" {
 
 variable "lambda_memory_size" {
   description = "Lambda Function Memory Size"
-  type = number
-  default = 128
+  type        = number
+  default     = 128
 }
 
 variable "aws_email_service" {
@@ -523,3 +523,29 @@ variable "grafana_admin_password" {
   default = "StrongPassword"
   description = "The Secure Password for Grafana"
 }
+
+variable "lambda_bucket_name" {
+  type    = string
+  default = null
+}
+
+variable "ssm_secret_key" {
+  type    = string
+  default = null
+}
+
+variable "document_data_api_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_pdf_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_docx_url" {
+  type    = string
+  default = null
+}
+

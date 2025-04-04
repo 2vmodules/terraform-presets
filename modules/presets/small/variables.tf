@@ -400,66 +400,66 @@ variable "cloudtrail_log_retention_days" {
 }
 
 variable "instance_type" {
-  type = string
+  type    = string
   default = "t3.micro"
 }
 
 variable "allowed_tcp_ports" {
-  type = list(string)
-  default = [ "" ]
+  type    = list(string)
+  default = [""]
 }
 variable "ecr_user_id" {
   description = "Account ID for docker login for ec2 instance"
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "private_key_path" {
   description = "Key Pair Path terraform connect to instance"
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "additional_disk_type" {
   description = "Attached Disk Type"
-  type = string
-  default = "gp2"
+  type        = string
+  default     = "gp2"
 }
 
 variable "additional_disk_size" {
   description = "Attached Disk Size"
-  type = number
-  default = 10
+  type        = number
+  default     = 10
 }
 
 variable "additional_disk" {
   description = "Attach Additional Disk To Instance"
-  type = bool
-  default = false
+  type        = bool
+  default     = false
 }
 
 variable "ec2_root_volume_type" {
   description = "Disk Type"
-  type = string
-  default = "gp2"
+  type        = string
+  default     = "gp2"
 }
 
 variable "ec2_root_volume_size" {
   description = "Root Volume Disk Size"
-  type = number
-  default = 10
+  type        = number
+  default     = 10
 }
 
 variable "key_name" {
   description = "EC2 Key Pair Name"
-  type = string
-  default = null
+  type        = string
+  default     = null
 }
 
 variable "enable_public_access" {
   description = "Attach Real IP to Instance"
-  type = bool
-  default = true
+  type        = bool
+  default     = true
 }
 
 variable "lambda_image_url" {
@@ -474,6 +474,18 @@ variable "lambda_region" {
 
 variable "lambda_memory_size" {
   description = "Lambda Function Memory Size"
-  type = number
-  default = 128
+  type        = number
+  default     = 128
+}
+
+variable "ubuntu_ami_name_pattern" {
+  description = "The name pattern for Ubuntu AMI"
+  type        = string
+  default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
+}
+
+variable "instance_arch" {
+  description = "The arch of EC2 Instance"
+  type        = string
+  default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
 }

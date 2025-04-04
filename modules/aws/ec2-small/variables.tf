@@ -90,46 +90,59 @@ variable "ssh_authorized_keys_secret" {
 }
 
 variable "key_name" {
-  type = string
+  type    = string
   default = null
 }
 
 variable "ec2_root_volume_size" {
-  type = number
+  type    = number
   default = 10
 }
 
 variable "ec2_root_volume_type" {
-  type = string
+  type    = string
   default = "gp2"
 }
 
 variable "additional_disk" {
-  type = bool
+  type    = bool
   default = false
 }
 
 variable "additional_disk_size" {
-  type = number
+  type    = number
   default = null
 }
 
 variable "additional_disk_type" {
-  type = string
+  type    = string
   default = "gp2"
 }
 
 variable "private_key_path" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "ecr_user_id" {
-  type = string
+  type    = string
   default = ""
 }
 
 variable "domain_name" {
-  type = string
+  type    = string
   default = ""
 }
+
+variable "ubuntu_ami_name_pattern" {
+  description = "The name pattern for Ubuntu AMI"
+  type        = string
+  default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
+}
+
+variable "instance_arch" {
+  description = "The arch of EC2 Instance"
+  type        = string
+  default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
+}
+

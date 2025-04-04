@@ -15,5 +15,5 @@ output "private_ip" {
 
 output "instance_id" {
   description = "Instance ID"
-  value       = aws_instance.bastion.id  # Use the splat operator to get a list of IDs
+  value       = aws_instance.bastion.id # Use the splat operator to get a list of IDs
 }
