@@ -1,17 +1,6 @@
-# resource "local_file" "lambda_function" {
-#   count = var.cdn_optimize_images ? 1 : 0
+resource "local_file" "lambda_function" {
+  count = var.cdn_optimize_images ? 1 : 0
 
-<<<<<<< HEAD
-#   content = templatefile(
-#     "${path.module}/image-resize/index.js.tmpl",
-#     {
-#       env  = var.env
-#       name = var.name
-#     }
-#   )
-#   filename = "${path.module}/image-resize/index.js"
-# }
-=======
   content = templatefile(
     "${path.module}/image-resize/index.js.tmpl",
     {
@@ -26,14 +15,13 @@
   )
   filename = "${path.module}/image-resize/index.js"
 }
->>>>>>> update-modules
 
-# data "archive_file" "lambda_function" {
-#   type        = "zip"
-#   source_dir  = "${path.module}/image-resize"
-#   output_path = "image-resize.zip"
-#   depends_on  = [local_file.lambda_function]
-# }
+data "archive_file" "lambda_function" {
+  type        = "zip"
+  source_dir  = "${path.module}/image-resize"
+  output_path = "image-resize.zip"
+  depends_on  = [local_file.lambda_function]
+}
 
 locals {
   repository_name = split("/", var.lambda_image_url)[1]
