@@ -65,10 +65,10 @@ resource "aws_cloudfront_distribution" "default" {
     origin_id = "lambda-origin"
 
     custom_origin_config {
-      http_port                = 80
-      https_port               = 443
-      origin_protocol_policy   = "https-only"
-      origin_ssl_protocols     = ["TLSv1.2"]
+      http_port              = 80
+      https_port             = 443
+      origin_protocol_policy = "https-only"
+      origin_ssl_protocols   = ["TLSv1.2"]
     }
   }
 
@@ -108,10 +108,10 @@ resource "aws_cloudfront_distribution" "default" {
 }
 
 resource "aws_cloudfront_origin_access_control" "default" {
-  count                                   = var.cdn_enabled ? 1 : 0
-  name                                    = "default-${var.env}"
-  description                             = "Default Policy"
-  origin_access_control_origin_type       = "s3"
-  signing_behavior                        = "always"
-  signing_protocol                        = "sigv4"
+  count                             = var.cdn_enabled ? 1 : 0
+  name                              = "default-${var.env}"
+  description                       = "Default Policy"
+  origin_access_control_origin_type = "s3"
+  signing_behavior                  = "always"
+  signing_protocol                  = "sigv4"
 }

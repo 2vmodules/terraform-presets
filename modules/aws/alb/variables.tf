@@ -74,7 +74,7 @@ variable "lambda_image_url" {
 }
 
 variable "lambda_memory_size" {
-  type = number
+  type    = number
   default = 128
 }
 

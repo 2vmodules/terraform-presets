@@ -66,7 +66,7 @@ module "vpc" {
   enable_nat_gateway = var.enable_nat_gateway
   single_nat_gateway = var.single_nat_gateway
 
-  ecs_enabled = var.ecs_enabled
+  ecs_enabled      = var.ecs_enabled
   postgres_enabled = var.postgres_enabled
 
 
@@ -87,19 +87,19 @@ module "alb" {
 
   domain_name     = var.domain_name
   cdn_domain_name = var.cdn_domain_name
-  ecs_enabled = var.ecs_enabled
-  vpc_id      = module.vpc.vpc_id
-  vpc_subnets = module.vpc.public_subnets
+  ecs_enabled     = var.ecs_enabled
+  vpc_id          = module.vpc.vpc_id
+  vpc_subnets     = module.vpc.public_subnets
 
   idle_timeout = var.alb_idle_timeout
 
   #cdn_bucket_names = [module.s3[1].s3_bucket_bucket_regional_domain_name]
-  cdn_enabled         = var.cdn_enabled
-  cdn_buckets         = local.public_bucket_list
-  cdn_optimize_images = var.cdn_optimize_images
-  lambda_image_url    = var.lambda_image_url
-  lambda_region       = var.lambda_region
-  lambda_memory_size  = var.lambda_memory_size
+  cdn_enabled            = var.cdn_enabled
+  cdn_buckets            = local.public_bucket_list
+  cdn_optimize_images    = var.cdn_optimize_images
+  lambda_image_url       = var.lambda_image_url
+  lambda_region          = var.lambda_region
+  lambda_memory_size     = var.lambda_memory_size
   lambda_private_subnets = module.vpc.private_subnets
   lambda_security_group  = [module.alb.alb_aws_security_group_id]
 
@@ -137,10 +137,10 @@ module "ecs" {
   name   = var.name
   tags   = var.tags
 
-  vpc_id             = module.vpc.vpc_id
-  vpc_subnets        = module.vpc.private_subnets
-  alb_security_group = module.alb.alb_aws_security_group_id
-  alb_listener_arn   = module.alb.alb_listener_https_arn
+  vpc_id                  = module.vpc.vpc_id
+  vpc_subnets             = module.vpc.private_subnets
+  alb_security_group      = module.alb.alb_aws_security_group_id
+  alb_listener_arn        = module.alb.alb_listener_https_arn
   vpc_private_cidr_blocks = module.vpc.private_subnets_cidr_blocks
 
   cluster_name = var.ecs_cluster_name
@@ -150,8 +150,8 @@ module "ecs" {
 
 module "postgres" {
   bastion_security_group_id = module.ec2[0].security_group_id
-  count  = var.postgres_enabled == true ? 1 : 0
-  source = "../../aws/postgres"
+  count                     = var.postgres_enabled == true ? 1 : 0
+  source                    = "../../aws/postgres"
 
   region = var.region
   env    = var.env
@@ -267,8 +267,8 @@ module "cloudtrail" {
 }
 
 module "ses" {
-  count  = var.aws_email_service == true ? 1 : 0
-  source = "../../aws/ses"
+  count            = var.aws_email_service == true ? 1 : 0
+  source           = "../../aws/ses"
   aws_email_domain = var.domain_name
   mail_from_alias  = var.mail_from_alias
 }

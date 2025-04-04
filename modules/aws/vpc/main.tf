@@ -31,8 +31,8 @@ module "vpc" {
   ### If needed, DB subnets can be separated
   # elasticache_subnets           = var.elasticache_subnets
   # elasticache_subnet_group_name = "${var.env}-elasticache-subnet-group"
-  database_subnets              = var.database_subnets
-  database_subnet_group_name    = "${var.env}-database-subnet-group"
+  database_subnets           = var.database_subnets
+  database_subnet_group_name = "${var.env}-database-subnet-group"
 
   enable_dns_hostnames = var.enable_dns_hostnames
   enable_dns_support   = var.enable_dns_support

@@ -1,17 +1,17 @@
 locals {
 
-  containers_map = { for i, container in var.containers : tostring(i) => container }
-  load_balanced_container_keys     = [for i, container in local.containers_map : i if container.path != ""]
+  containers_map               = { for i, container in var.containers : tostring(i) => container }
+  load_balanced_container_keys = [for i, container in local.containers_map : i if container.path != ""]
   load_balanced_containers = flatten([
     for key, container in local.containers_map : [
       for path in container.path : {
-        name         = container.name
-        path         = path
-        port         = container.port
-        priority     = container.priority
-        health_check = container.health_check
+        name           = container.name
+        path           = path
+        port           = container.port
+        priority       = container.priority
+        health_check   = container.health_check
         service_domain = container.service_domain
-        key          = key # Keep original key
+        key            = key # Keep original key
       } if length(path) > 0 && length(container.service_domain) > 0
     ]
   ])
@@ -44,7 +44,7 @@ resource "aws_alb_listener_rule" "https_listener_rule" {
   }
 
   listener_arn = var.alb_listener_arn
-  priority     = each.value["priority"] 
+  priority     = each.value["priority"]
 
   action {
     type             = "forward"

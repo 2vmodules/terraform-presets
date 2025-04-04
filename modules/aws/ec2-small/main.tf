@@ -15,7 +15,7 @@ data "aws_ami" "ami" {
   most_recent = true
 
   filter {
-    name   = "name"
+    name = "name"
     # For Ubuntu 22.04 (Jammy)
     values = [var.ubuntu_ami_name_pattern]
   }
@@ -73,7 +73,7 @@ resource "aws_iam_role_policy_attachment" "ec2_describe_volumes_attach" {
 }
 
 resource "aws_iam_policy" "secrets_read_policy" {
-  name  = "${var.env}-secrets-read-policy"
+  name   = "${var.env}-secrets-read-policy"
   policy = data.aws_iam_policy_document.secrets_read_policy_doc.json
 }
 
@@ -177,11 +177,11 @@ resource "aws_volume_attachment" "bastion_additional_disk" {
 }
 
 resource "aws_instance" "bastion" {
-  ami                = data.aws_ami.ami.id
-  ebs_optimized      = true
-  instance_type      = var.instance_type
-  key_name           = var.key_name
-  availability_zone  = "${var.region}a"
+  ami                  = data.aws_ami.ami.id
+  ebs_optimized        = true
+  instance_type        = var.instance_type
+  key_name             = var.key_name
+  availability_zone    = "${var.region}a"
   iam_instance_profile = aws_iam_instance_profile.ssm_profile.name
 
   dynamic "network_interface" {
@@ -227,7 +227,7 @@ resource "aws_instance" "bastion" {
   )
 
   user_data_replace_on_change = false
-  tags = local.tags
+  tags                        = local.tags
 
   lifecycle {
     ignore_changes = [ami]
@@ -255,12 +255,12 @@ resource "null_resource" "wait_for_cloud_init" {
 }
 
 resource "null_resource" "dev_provisioning" {
-  count = var.env == "dev" ? 1 : 0
+  count      = var.env == "dev" ? 1 : 0
   depends_on = [null_resource.wait_for_cloud_init]
   triggers = {
-    docker_compose_hash  = filesha256("${path.root}/templates/docker-compose.yml")
-    nginx_conf_hash  = filesha256("${path.root}/templates/nginx.conf")
-    secret_version_id    = data.aws_secretsmanager_secret_version.env_secret.version_id
+    docker_compose_hash = filesha256("${path.root}/templates/docker-compose.yml")
+    nginx_conf_hash     = filesha256("${path.root}/templates/nginx.conf")
+    secret_version_id   = data.aws_secretsmanager_secret_version.env_secret.version_id
     cloudflare_token    = data.aws_secretsmanager_secret_version.cloudflare_token.version_id
   }
 

@@ -4,13 +4,13 @@ resource "local_file" "lambda_function" {
   content = templatefile(
     "${path.module}/image-resize/index.js.tmpl",
     {
-      env  = var.env
-      name = var.name
-      lambda_bucket_name = var.lambda_bucket_name
-      ssm_secret_key = var.ssm_secret_key
+      env                   = var.env
+      name                  = var.name
+      lambda_bucket_name    = var.lambda_bucket_name
+      ssm_secret_key        = var.ssm_secret_key
       document_data_api_url = var.document_data_api_url
-      html_to_pdf_url =var.html_to_pdf_url
-      html_to_docx_url = var.html_to_docx_url
+      html_to_pdf_url       = var.html_to_pdf_url
+      html_to_docx_url      = var.html_to_docx_url
     }
   )
   filename = "${path.module}/image-resize/index.js"
@@ -37,16 +37,16 @@ resource "aws_lambda_function" "image_resize" {
 
   provider = aws.main ### lambda@edge requires us-east-1 region
 
-  package_type     = "Image"
-  function_name    = "${var.env}-image-resize"
+  package_type  = "Image"
+  function_name = "${var.env}-image-resize"
   # handler          = "index.handler"
   # runtime          = "nodejs20.x"
-  image_uri        = "${var.lambda_image_url}@${data.aws_ecr_image.latest_image.image_digest}"
-  role             = aws_iam_role.lambda_exec_role[count.index].arn
+  image_uri = "${var.lambda_image_url}@${data.aws_ecr_image.latest_image.image_digest}"
+  role      = aws_iam_role.lambda_exec_role[count.index].arn
   # publish          = true
   # timeout          = 15
-  publish          = true
-  memory_size      = var.lambda_memory_size
+  publish     = true
+  memory_size = var.lambda_memory_size
   vpc_config {
     subnet_ids         = var.lambda_private_subnets
     security_group_ids = var.lambda_security_group
@@ -88,8 +88,8 @@ resource "aws_iam_policy" "lambda_exec_policy" {
     Version = "2012-10-17",
     Statement = [
       {
-        Effect   = "Allow",
-        Action   = [
+        Effect = "Allow",
+        Action = [
           "ssm:GetParameter"
         ],
         Resource = "arn:aws:ssm:${var.lambda_region}:${data.aws_caller_identity.current.account_id}:parameter/${var.env}-${var.name}-*"
@@ -140,23 +140,23 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_attach" {
 }
 
 resource "aws_lambda_function_url" "image_resize_url" {
-  count = var.cdn_optimize_images ? 1 : 0
+  count              = var.cdn_optimize_images ? 1 : 0
   function_name      = aws_lambda_function.image_resize[count.index].function_name
   authorization_type = "NONE"
 
   cors {
     allow_origins = ["*"]
-    allow_methods     = ["*"]
+    allow_methods = ["*"]
   }
 }
 
 resource "aws_lambda_permission" "allow_cloudfront" {
-  count          = var.cdn_optimize_images ? 1 : 0
-  statement_id   = "AllowCloudFrontInvoke"
-  action         = "lambda:InvokeFunctionUrl"
-  function_name  = aws_lambda_function.image_resize[count.index].function_name
-  principal      = "*"
-  source_arn     = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.default[0].id}"
+  count         = var.cdn_optimize_images ? 1 : 0
+  statement_id  = "AllowCloudFrontInvoke"
+  action        = "lambda:InvokeFunctionUrl"
+  function_name = aws_lambda_function.image_resize[count.index].function_name
+  principal     = "*"
+  source_arn    = "arn:aws:cloudfront::${data.aws_caller_identity.current.account_id}:distribution/${aws_cloudfront_distribution.default[0].id}"
 
   # Explicit condition for public access when the authorization type is NONE
   function_url_auth_type = "NONE"

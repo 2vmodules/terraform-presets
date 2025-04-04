@@ -13,8 +13,8 @@ resource "aws_elasticsearch_domain" "elasticsearch" {
   elasticsearch_version = var.elasticsearch_version
 
   cluster_config {
-    instance_type = var.instance_type
-    instance_count = 1
+    instance_type          = var.instance_type
+    instance_count         = 1
     zone_awareness_enabled = false
   }
 
@@ -33,10 +33,10 @@ resource "aws_elasticsearch_domain" "elasticsearch" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Allow"
+        Effect    = "Allow"
         Principal = "*"
-        Action = "es:*"
-        Resource = "*"
+        Action    = "es:*"
+        Resource  = "*"
       }
     ]
   })

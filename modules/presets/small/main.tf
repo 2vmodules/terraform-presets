@@ -10,7 +10,7 @@ locals {
 }
 
 module "alb" {
-  count                      = var.cdn_enabled == true ? 1 : 0
+  count  = var.cdn_enabled == true ? 1 : 0
   source = "../../aws/alb"
 
   providers = {
@@ -24,7 +24,7 @@ module "alb" {
   tags   = var.tags
 
   cdn_domain_name = var.cdn_domain_name
-  domain_name = var.domain_name
+  domain_name     = var.domain_name
 
   vpc_id      = module.vpc.vpc_id
   vpc_subnets = module.vpc.public_subnets
@@ -32,15 +32,15 @@ module "alb" {
   idle_timeout = var.alb_idle_timeout
 
   #cdn_bucket_names = [module.s3[1].s3_bucket_bucket_regional_domain_name]
-  cdn_enabled         = var.cdn_enabled
-  cdn_buckets         = local.public_bucket_list
-  cdn_optimize_images = var.cdn_optimize_images
-  lambda_image_url    = var.lambda_image_url
-  lambda_region       = var.lambda_region
-  lambda_memory_size  = var.lambda_memory_size
+  cdn_enabled            = var.cdn_enabled
+  cdn_buckets            = local.public_bucket_list
+  cdn_optimize_images    = var.cdn_optimize_images
+  lambda_image_url       = var.lambda_image_url
+  lambda_region          = var.lambda_region
+  lambda_memory_size     = var.lambda_memory_size
   lambda_private_subnets = module.vpc.private_subnets
-  lambda_security_group = [module.ec2[0].security_group_id]
-  ecs_enabled = var.ecs_enabled
+  lambda_security_group  = [module.ec2[0].security_group_id]
+  ecs_enabled            = var.ecs_enabled
 }
 
 module "vpc" {
@@ -73,17 +73,17 @@ module "ecr" {
 }
 
 module "ec2" {
-  count                      = var.bastion_enabled == true ? 1 : 0
-  source                     = "../../aws/ec2-small"
+  count  = var.bastion_enabled == true ? 1 : 0
+  source = "../../aws/ec2-small"
 
-  region                     = var.region
-  env                        = var.env
-  name                       = var.name
-  tags                       = var.tags
+  region = var.region
+  env    = var.env
+  name   = var.name
+  tags   = var.tags
 
-  vpc_id                     = module.vpc.vpc_id
-  private_subnet_id          = module.vpc.private_subnets[0]
-  public_subnet_id           = module.vpc.public_subnets[0]
+  vpc_id            = module.vpc.vpc_id
+  private_subnet_id = module.vpc.private_subnets[0]
+  public_subnet_id  = module.vpc.public_subnets[0]
 
   ssh_authorized_keys_secret = var.bastion_ssh_authorized_keys_secret
   allowed_tcp_ports          = var.allowed_tcp_ports
