@@ -98,6 +98,8 @@ module "ec2" {
   ecr_user_id                = var.ecr_user_id
   instance_type              = var.instance_type
   domain_name                = var.domain_name
+  ubuntu_ami_name_pattern    = var.ubuntu_ami_name_pattern
+  instance_arch              = var.instance_arch
 }
 
 module "s3" {

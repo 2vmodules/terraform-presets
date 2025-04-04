@@ -493,3 +493,29 @@ variable "elasticsearch_version" {
   type        = string
   default     = "7.10"
 }
+
+variable "lambda_bucket_name" {
+  type    = string
+  default = null
+}
+
+variable "ssm_secret_key" {
+  type    = string
+  default = null
+}
+
+variable "document_data_api_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_pdf_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_docx_url" {
+  type    = string
+  default = null
+}
+

@@ -6,6 +6,11 @@ resource "local_file" "lambda_function" {
     {
       env  = var.env
       name = var.name
+      lambda_bucket_name = var.lambda_bucket_name
+      ssm_secret_key = var.ssm_secret_key
+      document_data_api_url = var.document_data_api_url
+      html_to_pdf_url =var.html_to_pdf_url
+      html_to_docx_url = var.html_to_docx_url
     }
   )
   filename = "${path.module}/image-resize/index.js"

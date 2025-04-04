@@ -17,12 +17,12 @@ data "aws_ami" "ami" {
   filter {
     name   = "name"
     # For Ubuntu 22.04 (Jammy)
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
+    values = [var.ubuntu_ami_name_pattern]
   }
 
   filter {
     name   = "architecture"
-    values = ["arm64"]
+    values = [var.instance_arch]
   }
 
   filter {
@@ -131,7 +131,6 @@ resource "aws_eip" "eip" {
 resource "aws_network_interface" "private" {
   subnet_id       = var.private_subnet_id
   security_groups = [aws_security_group.sg.id]
-  private_ip      = "10.0.65.29"
 
   tags = merge(
     local.tags,

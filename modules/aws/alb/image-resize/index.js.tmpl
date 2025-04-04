@@ -9,11 +9,11 @@ const querystring = require('querystring');
 const crypto = require('crypto');
 const ssm = new AWS.SSM();
 // set your S3 bucket name here
-const BUCKET = '${env}-${name}-media-bucket';
-const SSM_SECRET_KEY = '${env}-${name}-image-resize-secret-key';
-const GET_DOCUMENT_DATA_API_URL = `https://api.app.legally.io/api/_/get-document-data`;
-const HTML_TO_PDF_URL = 'https://api.app.legally.io/___/html-to-pdf';
-const HTML_TO_DOCX_URL = 'https://api.app.legally.io/___/html-to-docx';
+const BUCKET = ${lambda_bucket_name};
+const SSM_SECRET_KEY = ${ssm_secret_key};
+const GET_DOCUMENT_DATA_API_URL = ${document_data_api_url}};
+const HTML_TO_PDF_URL = ${html_to_pdf_url};
+const HTML_TO_DOCX_URL = ${html_to_docx_url};
 
 const secret = getSecretKey();
 
@@ -155,11 +155,6 @@ function isDocumentPath(path) {
   return path.startsWith('/documents');
 }
 
-
-// https://cdn.dev.legally.io/documents/{id}/name-v4.docx?signature=<signature>
-// https://cdn.dev.legally.io/documents/{id}/name-v4.pdf?signature=<signature>
-// https://cdn.dev.legally.io/documents/{id}/name-v4-p0-300x300-inside-ww.webp?signature=<signature>
-// https://cdn.dev.legally.io/documents/{id}/name-v4-p0-300x300-inside-nw.webp?signature=<signature>
 /**
  * @param {string} path
  * @example /documents/{id}/name-v4.pdf
@@ -179,7 +174,7 @@ function getDocumentParams(path) {
     documentId: groups.folderName,
     isDocument,
     isScreenshot,
-    pathToDocumentFile: `$${groups.type}/$${groups.folderName}/$${groups.fileName}-$${groups.version}.$${isScreenshot ? 'pdf' : groups.ext}`,
+    pathToDocumentFile: `${groups.type}/${groups.folderName}/${groups.fileName}-${groups.version}.${isScreenshot ? 'pdf' : groups.ext}`,
   }
 }
 
@@ -217,14 +212,14 @@ async function getSecretKey() {
 }
 
 function generateSignatureForDocument(name, version, secretKey) {
-  const signatureString = `$${name}-$${version}-$${secretKey}`
+  const signatureString = `${name}-${version}-${secretKey}`
 
   return crypto.createHash('sha256').update(signatureString).digest('hex')
 }
 
 function generateSignature(width, height, quality, secretKey) {
-  const resizeParams    = `$${width}x$${height}-$${quality}`
-  const signatureString = `$${resizeParams}$${secretKey}`
+  const resizeParams    = `${width}x${height}-${quality}`
+  const signatureString = `${resizeParams}${secretKey}`
 
   return crypto.createHash('sha256').update(signatureString).digest('hex')
 }
