@@ -44,7 +44,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
     operating_system_family = "LINUX"
     cpu_architecture        = "ARM64"
   }
-  
+
   dynamic "volume" {
     for_each = each.value.volumes
     content {
@@ -107,7 +107,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
       logConfiguration = var.loki_enabled ? {
         logDriver = "awsfirelens"
         options = {
-          "Name"               = "loki"
+          "Name"              = "loki"
           "Host"              = aws_instance.loki_grafana[0].private_ip
           "Port"              = "3100"
           "Labels"            = "{job=\"${container["name"]}\""
@@ -117,7 +117,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
           "AutoRetryRequests" = "true"
           "LineFormat"        = "key_value"
         }
-      } : {
+        } : {
         logDriver = "awslogs"
         options = {
           "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
@@ -128,7 +128,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
     }],
     var.loki_enabled ? [{
       name      = "log_router"
-      image     = "grafana/fluent-bit-plugin-loki:1.5.0-amd64"
+      image     = var.fluentbit_image
       essential = true
       firelensConfiguration = {
         type = "fluentbit"
@@ -144,7 +144,7 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
           "awslogs-stream-prefix" = "firelens"
         }
       }
-      memoryReservation = 50
+      memoryReservation = var.fluentbit_memoryreservation
     }] : []
   ))
 }

@@ -15,7 +15,6 @@ echo \
   tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt-get update
 
-
 apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 # Create Loki and Grafana directories
@@ -45,15 +44,19 @@ common:
 schema_config:
   configs:
     - from: 2020-10-24
-      store: boltdb-shipper
+      store: tsdb
       object_store: filesystem
-      schema: v11
+      schema: v13
       index:
         prefix: index_
         period: 24h
 
 ruler:
-  alertmanager_url: http://localhost:9093
+  alertmanager_url: ${alert_manager_url}
+
+compactor:
+  working_directory: /opt/loki/compactor
+  shared_store: filesystem
 EOF
 
 # Create Grafana datasource config
@@ -76,7 +79,9 @@ networks:
 
 services:
   loki:
-    image: grafana/loki:2.6.1
+    image: grafana/loki:3.3.2
+    name: loki
+    restart: always
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
@@ -87,20 +92,26 @@ services:
       - loki
 
   grafana:
-    image: grafana/grafana:9.1.5
+    image: docker.io/grafana/grafana:11.4.0
+    name: grafana
+    restart: always
     ports:
       - "3000:3000"
     volumes:
       - /opt/grafana/provisioning:/etc/grafana/provisioning
+      - grafana-storage:/var/lib/grafana
     environment:
-      - GF_SERVER_ROOT_URL=http://$${grafana_domain}
-      - GF_SERVER_DOMAIN=$${grafana_domain}
+      - GF_SERVER_ROOT_URL=http://${grafana_domain}
+      - GF_SERVER_DOMAIN=${grafana_domain}
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=$${grafana_admin_password}
+      - GF_SECURITY_ADMIN_PASSWORD=${grafana_admin_password}
     networks:
       - loki
     depends_on:
       - loki
+
+volumes:
+  grafana-storage:
 EOF
 
 docker compose -f /opt/docker-compose.yml up -d

@@ -1,10 +1,10 @@
 # EC2 instance for Loki and Grafana
 resource "aws_instance" "loki_grafana" {
-  count         = var.loki_enabled ? 1 : 0
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = var.loki_ec2_instance_type
-  key_name      = var.loki_ec2_key_name
-  subnet_id     = var.vpc_subnets[0]
+  count                  = var.loki_enabled ? 1 : 0
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = var.loki_ec2_instance_type
+  key_name               = var.loki_ec2_key_name
+  subnet_id              = var.vpc_subnets[0]
   vpc_security_group_ids = [aws_security_group.loki_grafana[0].id]
 
   tags = merge({
@@ -12,12 +12,13 @@ resource "aws_instance" "loki_grafana" {
   }, local.common_tags)
 
   user_data = templatefile("${path.module}/loki-grafana-setup.sh", {
-    grafana_domain = var.grafana_domain
+    grafana_domain         = var.grafana_domain
     grafana_admin_password = var.grafana_admin_password
+    alert_manager_url      = var.alert_manager_url
   })
 
   root_block_device {
-    volume_size = 50
+    volume_size = var.loki_instance_volume_size
     volume_type = "gp3"
   }
 
@@ -37,7 +38,7 @@ resource "aws_security_group" "loki_grafana" {
     from_port   = 3000
     to_port     = 3000
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.alb_security_group]
   }
 
   ingress {
@@ -149,12 +150,23 @@ resource "aws_iam_role_policy_attachment" "ecs_loki_logging" {
 }
 
 data "aws_ami" "ubuntu" {
+  owners      = var.ami_owners
   most_recent = true
-  owners      = ["099720109477"] # Canonical
 
   filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    name = "name"
+    # For Ubuntu 22.04 (Jammy)
+    values = [var.ubuntu_ami_name_pattern]
+  }
+
+  filter {
+    name   = "architecture"
+    values = [var.instance_arch]
+  }
+
+  filter {
+    name   = "root-device-type"
+    values = ["ebs"]
   }
 
   filter {
