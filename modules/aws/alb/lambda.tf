@@ -16,12 +16,12 @@ resource "local_file" "lambda_function" {
   filename = "${path.module}/image-resize/index.js"
 }
 
-# data "archive_file" "lambda_function" {
-#   type        = "zip"
-#   source_dir  = "${path.module}/image-resize"
-#   output_path = "image-resize.zip"
-#   depends_on  = [local_file.lambda_function]
-# }
+data "archive_file" "lambda_function" {
+  type        = "zip"
+  source_dir  = "${path.module}/image-resize"
+  output_path = "image-resize.zip"
+  depends_on  = [local_file.lambda_function]
+}
 
 locals {
   repository_name = split("/", var.lambda_image_url)[1]
