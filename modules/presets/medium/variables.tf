@@ -519,3 +519,7 @@ variable "html_to_docx_url" {
   default = null
 }
 
+variable "lambda_edge_enabled" {
+  type    = bool
+  default = true
+}

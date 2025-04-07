@@ -102,7 +102,7 @@ module "alb" {
   lambda_memory_size     = var.lambda_memory_size
   lambda_private_subnets = module.vpc.private_subnets
   lambda_security_group  = [module.alb.alb_aws_security_group_id]
-
+  lambda_edge_enabled    = true
 }
 
 module "ecr" {
