@@ -146,6 +146,11 @@ module "ecs" {
   cluster_name = var.ecs_cluster_name
   containers   = local.final_ecs_containers
 
+  efs_enabled          = var.efs_enabled
+  efs_performance_mode = var.efs_performance_mode
+  efs_throughput_mode  = var.efs_throughput_mode
+
+
 }
 
 module "postgres" {

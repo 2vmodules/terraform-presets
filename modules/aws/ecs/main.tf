@@ -45,23 +45,21 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
     cpu_architecture        = "ARM64"
   }
   dynamic "volume" {
-    for_each = each.value.volumes
+    for_each = var.efs_enabled ? each.value.volumes : []
     content {
       name = volume.value.name
-      dynamic "efs_volume_configuration" {
-        for_each = volume.value.efs_file_system_id != null ? [volume.value] : []
-        content {
-          file_system_id          = efs_volume_configuration.value.efs_file_system_id
-          root_directory          = coalesce(efs_volume_configuration.value.efs_root_directory, "/")
-          transit_encryption      = coalesce(efs_volume_configuration.value.efs_transit_encryption, "ENABLED")
-          transit_encryption_port = coalesce(efs_volume_configuration.value.efs_transit_encryption_port, 2999)
 
-          dynamic "authorization_config" {
-            for_each = efs_volume_configuration.value.efs_access_point_id != null ? [efs_volume_configuration.value] : []
-            content {
-              access_point_id = authorization_config.value.efs_access_point_id
-              iam             = "ENABLED"
-            }
+      dynamic "efs_volume_configuration" {
+        for_each = try(aws_efs_file_system.ecs[0].id, null) != null ? [volume.value] : []
+        content {
+          file_system_id          = aws_efs_file_system.ecs[0].id
+          root_directory          = "/${each.value.name}"
+          transit_encryption      = "ENABLED"
+          transit_encryption_port = 2999
+
+          authorization_config {
+            access_point_id = aws_efs_access_point.ecs[each.key].id
+            iam             = "ENABLED"
           }
         }
       }
@@ -95,13 +93,13 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
         }
       ]
 
-      mountPoints = [
+      mountPoints = var.efs_enabled ? [
         for v in each.value.volumes : {
           containerPath = v.container_path
           sourceVolume  = v.name
           readOnly      = coalesce(v.read_only, false)
         }
-      ]
+      ] : []
 
       logConfiguration = {
         logDriver = "awslogs"

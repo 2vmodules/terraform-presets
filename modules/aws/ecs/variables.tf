@@ -65,14 +65,9 @@ variable "containers" {
     secrets              = map(string)
     health_check         = map(string)
     volumes = optional(list(object({
-      name                        = string
-      container_path              = string
-      read_only                   = optional(bool)
-      efs_file_system_id          = optional(string)
-      efs_access_point_id         = optional(string)
-      efs_root_directory          = optional(string)
-      efs_transit_encryption      = optional(string)
-      efs_transit_encryption_port = optional(number)
+      name           = string
+      container_path = string
+      read_only      = optional(bool)
     })), [])
   }))
   default = [
@@ -146,4 +141,28 @@ variable "containers" {
     }
     # Add more containers as needed
   ]
+}
+
+variable "efs_enabled" {
+  description = "Enable EFS for shared storage"
+  type        = bool
+  default     = false
+}
+
+variable "efs_performance_mode" {
+  description = "EFS performance mode"
+  type        = string
+  default     = "generalPurpose"
+}
+
+variable "efs_throughput_mode" {
+  description = "EFS throughput mode"
+  type        = string
+  default     = "bursting"
+}
+
+variable "efs_provisioned_throughput" {
+  description = "Provisioned throughput in MiB/s (only valid when throughput_mode is provisioned)"
+  type        = number
+  default     = null
 }
