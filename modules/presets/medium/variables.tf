@@ -137,11 +137,6 @@ variable "ecs_containers" {
           name                        = "web-container-efs-storage"
           container_path              = "/opt/web-container-data"
           read_only                   = false
-          efs_file_system_id          = "fs-abcdef12345"
-          efs_access_point_id         = "fsap-1234567890abcdef"
-          efs_root_directory          = "/web-container"
-          efs_transit_encryption      = "ENABLED"
-          efs_transit_encryption_port = 2999
         }
       ]
     },
@@ -171,11 +166,6 @@ variable "ecs_containers" {
           name                        = "api-container-efs-storage"
           container_path              = "/opt/api-container-data"
           read_only                   = false
-          efs_file_system_id          = "fs-abcdef12345"
-          efs_access_point_id         = "fsap-1234567890abcdef"
-          efs_root_directory          = "/api-container"
-          efs_transit_encryption      = "ENABLED"
-          efs_transit_encryption_port = 2999
         }
       ]
     }
