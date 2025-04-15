@@ -105,14 +105,9 @@ variable "ecs_containers" {
     secrets              = map(string)
     health_check         = map(string)
     volumes = optional(list(object({
-      name                        = string
-      container_path              = string
-      read_only                   = optional(bool)
-      efs_file_system_id          = optional(string)
-      efs_access_point_id         = optional(string)
-      efs_root_directory          = optional(string)
-      efs_transit_encryption      = optional(string)
-      efs_transit_encryption_port = optional(number)
+      name           = string
+      container_path = string
+      read_only      = optional(bool)
     })), [])
   }))
   default = [
@@ -142,11 +137,6 @@ variable "ecs_containers" {
           name                        = "web-container-efs-storage"
           container_path              = "/opt/web-container-data"
           read_only                   = false
-          efs_file_system_id          = "fs-abcdef12345"
-          efs_access_point_id         = "fsap-1234567890abcdef"
-          efs_root_directory          = "/web-container"
-          efs_transit_encryption      = "ENABLED"
-          efs_transit_encryption_port = 2999
         }
       ]
     },
@@ -176,11 +166,6 @@ variable "ecs_containers" {
           name                        = "api-container-efs-storage"
           container_path              = "/opt/api-container-data"
           read_only                   = false
-          efs_file_system_id          = "fs-abcdef12345"
-          efs_access_point_id         = "fsap-1234567890abcdef"
-          efs_root_directory          = "/api-container"
-          efs_transit_encryption      = "ENABLED"
-          efs_transit_encryption_port = 2999
         }
       ]
     }
@@ -589,4 +574,32 @@ variable "instance_arch" {
   description = "The arch of EC2 Instance"
   type        = string
   default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
+
+variable "lambda_edge_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "efs_enabled" {
+  description = "Enable EFS for shared storage"
+  type        = bool
+  default     = false
+}
+
+variable "efs_performance_mode" {
+  description = "EFS performance mode"
+  type        = string
+  default     = "generalPurpose"
+}
+
+variable "efs_throughput_mode" {
+  description = "EFS throughput mode"
+  type        = string
+  default     = "bursting"
+}
+
+variable "efs_provisioned_throughput" {
+  description = "Provisioned throughput in MiB/s (only valid when throughput_mode is provisioned)"
+  type        = number
+  default     = null
 }

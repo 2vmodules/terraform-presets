@@ -102,7 +102,7 @@ module "alb" {
   lambda_memory_size     = var.lambda_memory_size
   lambda_private_subnets = module.vpc.private_subnets
   lambda_security_group  = [module.alb.alb_aws_security_group_id]
-
+  lambda_edge_enabled    = true
 }
 
 module "ecr" {
@@ -151,6 +151,11 @@ module "ecs" {
   loki_ec2_instance_type   = var.loki_ec2_instance_type
   loki_ec2_key_name        = var.loki_ec2_key_name
   grafana_admin_password   = var.grafana_admin_password
+
+  efs_enabled          = var.efs_enabled
+  efs_performance_mode = var.efs_performance_mode
+  efs_throughput_mode  = var.efs_throughput_mode
+
 }
 
 module "postgres" {

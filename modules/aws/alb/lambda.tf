@@ -1,5 +1,5 @@
 resource "local_file" "lambda_function" {
-  count = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
 
   content = templatefile(
     "${path.module}/image-resize/index.js.tmpl",
@@ -33,7 +33,7 @@ data "aws_ecr_image" "latest_image" {
 }
 
 resource "aws_lambda_function" "image_resize" {
-  count = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
 
   provider = aws.main ### lambda@edge requires us-east-1 region
 
@@ -55,7 +55,7 @@ resource "aws_lambda_function" "image_resize" {
 }
 
 resource "aws_iam_role" "lambda_exec_role" {
-  count = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
 
   name = "${var.env}_lambda_exec_role"
 
@@ -81,7 +81,7 @@ resource "aws_iam_role" "lambda_exec_role" {
 }
 
 resource "aws_iam_policy" "lambda_exec_policy" {
-  count = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
 
   name = "${var.env}_lambda_exec_policy"
   policy = jsonencode({
@@ -133,7 +133,7 @@ resource "aws_iam_policy" "lambda_exec_policy" {
 
 
 resource "aws_iam_role_policy_attachment" "lambda_exec_attach" {
-  count = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
 
   policy_arn = aws_iam_policy.lambda_exec_policy[count.index].arn
   role       = aws_iam_role.lambda_exec_role[count.index].name
