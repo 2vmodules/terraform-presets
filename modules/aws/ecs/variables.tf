@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -25,10 +25,6 @@ variable "vpc_subnets" {
   type = list(string)
 }
 
-variable "vpc_private_cidr_blocks" {
-  type = list(string)
-}
-
 variable "alb_security_group" {
   type = string
 }
@@ -46,6 +42,10 @@ variable "cluster_name" {
   type = string
 }
 
+variable "vpc_private_cidr_blocks" {
+  type = list(string)
+}
+
 variable "containers" {
   type = list(object({
     name                 = string
@@ -57,13 +57,18 @@ variable "containers" {
     max_count            = number
     target_cpu_threshold = number
     target_mem_threshold = number
-    path                 = string
+    path                 = list(string)
     port                 = number
+    service_domain       = string
     priority             = number
     envs                 = map(string)
     secrets              = map(string)
     health_check         = map(string)
-    metrics              = map(string)
+    volumes = optional(list(object({
+      name           = string
+      container_path = string
+      read_only      = optional(bool)
+    })), [])
   }))
   default = [
     {
@@ -76,21 +81,24 @@ variable "containers" {
       max_count            = 10
       target_cpu_threshold = 75
       target_mem_threshold = 80
-      path                 = "/"
+      path                 = ["/"]
       priority             = 20
       port                 = 8080
+      service_domain       = "domaon.example.com"
       envs                 = { ENV_VAR1 = "value1" }
-      secrets              = { SECRET1 = "arn:aws:ssm:us-west-1:awsAccountID:parameter/secret1" }
+      secrets              = { SECRET1 = "arn:aws:ssm:eu-central-1:awsAccountID:parameter/secret1" }
 
       health_check = {
         matcher = "200"
         path    = "/"
       }
-
-      metrics = {
-        path = "/metrics"
-        port = "8083"
-      }
+      volumes = [
+        {
+          name                        = "web-container-efs-storage"
+          container_path              = "/opt/web-container-data"
+          read_only                   = false
+        }
+      ]
     },
     {
       name                 = "api-container"
@@ -102,23 +110,49 @@ variable "containers" {
       max_count            = 10
       target_cpu_threshold = 75
       target_mem_threshold = 80
-      path                 = "/api"
+      path                 = ["/api"]
       priority             = 10
       port                 = 8081
+      service_domain       = "domaon.example.com"
       envs                 = { ENV_VAR1 = "value1" }
-      secrets              = { SECRET1 = "arn:aws:ssm:us-west-1:awsAccountID:parameter/secret1" }
+      secrets              = { SECRET1 = "arn:aws:ssm:eu-central-1:awsAccountID:parameter/secret1" }
 
       health_check = {
         matcher = "200"
         path    = "/"
       }
-
-      metrics = {
-        path = "/metrics"
-        port = "9000"
-      }
-
+      volumes = [
+        {
+          name                        = "api-container-efs-storage"
+          container_path              = "/opt/api-container-data"
+          read_only                   = false
+        }
+      ]
     }
     # Add more containers as needed
   ]
+}
+
+variable "efs_enabled" {
+  description = "Enable EFS for shared storage"
+  type        = bool
+  default     = false
+}
+
+variable "efs_performance_mode" {
+  description = "EFS performance mode"
+  type        = string
+  default     = "generalPurpose"
+}
+
+variable "efs_throughput_mode" {
+  description = "EFS throughput mode"
+  type        = string
+  default     = "bursting"
+}
+
+variable "efs_provisioned_throughput" {
+  description = "Provisioned throughput in MiB/s (only valid when throughput_mode is provisioned)"
+  type        = number
+  default     = null
 }

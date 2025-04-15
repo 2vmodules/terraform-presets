@@ -16,8 +16,9 @@ locals {
 }
 
 resource "aws_alb" "alb" {
+  count           = var.ecs_enabled ? 1 : 0
   name            = local.name
-  security_groups = [aws_security_group.alb.id]
+  security_groups = [aws_security_group.alb[0].id]
   subnets         = var.vpc_subnets
 
   idle_timeout = var.idle_timeout
@@ -25,8 +26,10 @@ resource "aws_alb" "alb" {
   tags = local.tags
 }
 
+
 resource "aws_alb_listener" "alb_default_listener_http" {
-  load_balancer_arn = aws_alb.alb.arn
+  count             = var.ecs_enabled ? 1 : 0
+  load_balancer_arn = aws_alb.alb[0].arn
   port              = "80"
   protocol          = "HTTP"
 
@@ -44,10 +47,11 @@ resource "aws_alb_listener" "alb_default_listener_http" {
 }
 
 resource "aws_alb_listener" "alb_default_listener_https" {
-  load_balancer_arn = aws_alb.alb.arn
+  count             = var.ecs_enabled ? 1 : 0
+  load_balancer_arn = aws_alb.alb[0].arn
   port              = 443
   protocol          = "HTTPS"
-  certificate_arn   = aws_acm_certificate.alb_certificate.arn
+  certificate_arn   = aws_acm_certificate.alb_certificate[0].arn
   ssl_policy        = "ELBSecurityPolicy-TLS-1-2-Ext-2018-06"
 
   default_action {
@@ -66,6 +70,7 @@ resource "aws_alb_listener" "alb_default_listener_https" {
 }
 
 resource "aws_security_group" "alb" {
+  count       = var.ecs_enabled ? 1 : 0
   name        = local.name
   description = "Security group for ALB"
   vpc_id      = var.vpc_id
@@ -96,7 +101,6 @@ resource "aws_security_group" "alb" {
 
   tags = local.tags
 }
-
 ### In case of ALB origin in Cloudfront:
 #
 # data "aws_ec2_managed_prefix_list" "cloudfront" {

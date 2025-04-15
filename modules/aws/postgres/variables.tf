@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -146,4 +146,9 @@ variable "database_user_map" {
   type        = map(string)
   description = "Map of databases and their users to create in RDS instance"
   default     = {}
+}
+
+variable "bastion_security_group_id" {
+  description = "The security group ID of the bastion host to allow access to RDS"
+  type        = string
 }

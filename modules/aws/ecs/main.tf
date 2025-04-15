@@ -40,6 +40,32 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
   cpu                      = each.value["cpu"]
   memory                   = each.value["memory"]
 
+  runtime_platform {
+    operating_system_family = "LINUX"
+    cpu_architecture        = "ARM64"
+  }
+  dynamic "volume" {
+    for_each = var.efs_enabled ? each.value.volumes : []
+    content {
+      name = volume.value.name
+
+      dynamic "efs_volume_configuration" {
+        for_each = try(aws_efs_file_system.ecs[0].id, null) != null ? [volume.value] : []
+        content {
+          file_system_id          = aws_efs_file_system.ecs[0].id
+          root_directory          = "/${each.value.name}"
+          transit_encryption      = "ENABLED"
+          transit_encryption_port = 2999
+
+          authorization_config {
+            access_point_id = aws_efs_access_point.ecs[each.key].id
+            iam             = "ENABLED"
+          }
+        }
+      }
+    }
+  }
+
   container_definitions = jsonencode([
     {
       name    = each.value["name"]
@@ -67,26 +93,13 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
         }
       ]
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.log_group.name
-          "awslogs-region"        = var.region
-          "awslogs-stream-prefix" = each.value["name"]
+      mountPoints = var.efs_enabled ? [
+        for v in each.value.volumes : {
+          containerPath = v.container_path
+          sourceVolume  = v.name
+          readOnly      = coalesce(v.read_only, false)
         }
-      }
-    },
-    {
-      name    = "ecs-exporter"
-      image   = "quay.io/prometheuscommunity/ecs-exporter:v0.2.1"
-      command = null
-      cpu     = 0
-      memory  = null
-      portMappings = [
-        {
-          containerPort = 9779
-        }
-      ]
+      ] : []
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -96,24 +109,9 @@ resource "aws_ecs_task_definition" "container_task_definitions" {
           "awslogs-stream-prefix" = each.value["name"]
         }
       }
+
     }
   ])
-
-  tags = merge(
-    try(
-      {
-        METRICS_PATH = each.value.metrics["path"]
-        METRICS_PORT = each.value.metrics["port"]
-      },
-      {}
-    ),
-    {
-      ECS_METRICS_PATH = "/metrics"
-      ECS_METRICS_PORT = 9779
-    },
-    local.tags
-  )
-
 }
 
 resource "aws_service_discovery_private_dns_namespace" "service_discovery_namespace" {
@@ -152,12 +150,13 @@ resource "aws_ecs_service" "container_service" {
   deployment_minimum_healthy_percent = floor(100 / each.value["min_count"])
   deployment_maximum_percent         = each.value["min_count"] == 1 ? 200 : 150
   launch_type                        = "FARGATE"
-
+  enable_execute_command             = true
+  force_new_deployment               = true
   dynamic "load_balancer" {
-    for_each = each.value.path == "" ? [] : [1]
+    for_each = length(each.value.path) == 0 ? [] : [for path in each.value.path : path]
 
     content {
-      target_group_arn = aws_alb_target_group.service_target_group[local.load_balanced_container_keys_map[each.key]].arn
+      target_group_arn = aws_alb_target_group.service_target_group[each.key].arn
       container_name   = each.value["name"]
       container_port   = each.value["port"]
     }
@@ -192,28 +191,10 @@ resource "aws_security_group" "ecs" {
   }
 
   ingress {
-    from_port       = each.value["port"]
-    to_port         = each.value["port"]
-    protocol        = "tcp"
-    cidr_blocks     = var.vpc_private_cidr_blocks
-  }
-
-  ingress {
-    from_port   = 9779
-    to_port     = 9779
+    from_port   = each.value["port"]
+    to_port     = each.value["port"]
     protocol    = "tcp"
     cidr_blocks = var.vpc_private_cidr_blocks
-  }
-
-  dynamic "ingress" {
-    for_each = length(each.value.metrics) > 0 ? [1] : []
-
-    content {
-      from_port   = each.value.metrics["port"]
-      to_port     = each.value.metrics["port"]
-      protocol    = "tcp"
-      cidr_blocks = var.vpc_private_cidr_blocks
-    }
   }
 
   egress {
@@ -301,6 +282,32 @@ resource "aws_iam_role_policy_attachment" "ecs_exec_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_exec_ssm_policy" {
+  role       = aws_iam_role.exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_exec_ssm_policy_attachment" {
+  role       = aws_iam_role.exec_role.name
+  policy_arn = aws_iam_policy.ecs_exec_ssm_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_exec_task_policy" {
+  role       = aws_iam_role.exec_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_exec_ssm_policy_attachment_task" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = aws_iam_policy.ecs_exec_ssm_policy.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ecs_task_ssm_core" {
+  role       = aws_iam_role.task_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+
 resource "aws_iam_role" "task_role" {
   name = "${var.cluster_name}-task-role"
 
@@ -322,6 +329,29 @@ EOF
   tags = {
     Name = "${var.cluster_name}-task-role"
   }
+}
+
+resource "aws_iam_policy" "ecs_exec_ssm_policy" {
+  name        = "${var.cluster_name}-ecs-exec-ssm-policy"
+  description = "Allows ECS Exec to use SSM Session Manager"
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
 }
 
 resource "aws_iam_role_policy_attachment" "ecs_task_policy" {
@@ -355,12 +385,56 @@ resource "aws_iam_policy" "ssm_get_policy" {
 EOF
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_exec_role" {
+resource "aws_iam_role_policy_attachment" "ecr_pull_assume_role" {
   role       = aws_iam_role.exec_role.name
   policy_arn = aws_iam_policy.ssm_get_policy.arn
 }
 
-resource "aws_iam_role_policy_attachment" "ecs_task_role" {
-  role       = aws_iam_role.task_role.name
-  policy_arn = aws_iam_policy.ssm_get_policy.arn
+
+resource "aws_vpc_endpoint" "ssm_messages" {
+  vpc_id              = var.vpc_id
+  service_name        = "com.amazonaws.${var.region}.ssmmessages"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+  security_group_ids = [
+    var.alb_security_group
+  ]
+  subnet_ids = var.vpc_subnets
+}
+
+resource "aws_iam_user" "exec_user" {
+  name = "${var.env}-${var.name}_exec_user"
+
+  tags = {
+    Env        = var.env
+    Project    = var.name
+    tf-managed = true
+  }
+}
+
+resource "aws_iam_user_policy" "exec_user_policy" {
+  name = "${var.env}-${var.name}_ecs_exec_policy"
+  user = aws_iam_user.exec_user.name
+
+  policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecs:ExecuteCommand",
+                "ecs:ListTasks",
+                "ecs:DescribeTasks",
+                "ecs:DescribeServices",
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+EOF
 }

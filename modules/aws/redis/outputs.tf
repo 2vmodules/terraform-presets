@@ -39,5 +39,5 @@ output "auth_token" {
 }
 
 output "auth_token_ssm_arn" {
-  value     = aws_ssm_parameter.auth_token.arn
+  value = aws_ssm_parameter.auth_token.arn
 }

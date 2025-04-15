@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -22,7 +22,7 @@ variable "public" {
   default = true
 }
 
-variable "replication" {
+variable "versioning" {
   type    = bool
   default = false
 }

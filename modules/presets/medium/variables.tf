@@ -1,7 +1,7 @@
 variable "region" {
   description = "AWS region"
   type        = string
-  default     = "us-west-1"
+  default     = "eu-central-1"
 }
 
 variable "env" {
@@ -26,6 +26,12 @@ variable "domain_name" {
   description = "The domain name for the project"
   type        = string
   default     = "example.com"
+}
+
+variable "cdn_domain_name" {
+  description = "The domain name for the cdn"
+  type        = string
+  default     = "cdn.example.com"
 }
 
 ### VPC ###
@@ -91,13 +97,18 @@ variable "ecs_containers" {
     max_count            = number
     target_cpu_threshold = number
     target_mem_threshold = number
-    path                 = string
+    path                 = list(string)
     priority             = number
     port                 = number
+    service_domain       = string
     envs                 = map(string)
     secrets              = map(string)
     health_check         = map(string)
-    metrics              = map(string)
+    volumes = optional(list(object({
+      name           = string
+      container_path = string
+      read_only      = optional(bool)
+    })), [])
   }))
   default = [
     {
@@ -110,22 +121,24 @@ variable "ecs_containers" {
       max_count            = 10
       target_cpu_threshold = 75
       target_mem_threshold = 80
-      path                 = "/"
+      path                 = ["/"]
       priority             = 20
       port                 = 8080
+      service_domain       = "domaon.example.com"
       envs                 = { ENV_VAR1 = "value1" }
-      secrets              = { SECRET1 = "arn:aws:ssm:us-west-1:awsAccountID:parameter/secret1" }
+      secrets              = { SECRET1 = "arn:aws:ssm:eu-central-1:awsAccountID:parameter/secret1" }
 
       health_check = {
         matcher = "200"
         path    = "/"
       }
-
-      metrics = {
-        path = "/metrics"
-        port = "8083  "
-      }
-
+      volumes = [
+        {
+          name                        = "web-container-efs-storage"
+          container_path              = "/opt/web-container-data"
+          read_only                   = false
+        }
+      ]
     },
     {
       name                 = "api-container"
@@ -137,31 +150,27 @@ variable "ecs_containers" {
       max_count            = 10
       target_cpu_threshold = 75
       target_mem_threshold = 80
-      path                 = "/api"
+      path                 = ["/api"]
       priority             = 10
       port                 = 8081
+      service_domain       = "domaon.example.com"
       envs                 = { ENV_VAR2 = "value1" }
-      secrets              = { SECRET2 = "arn:aws:ssm:us-west-1:awsAccountID:parameter/secret2" }
+      secrets              = { SECRET2 = "arn:aws:ssm:eu-central-1:awsAccountID:parameter/secret2" }
 
       health_check = {
         matcher = "200"
         path    = "/"
       }
-
-      metrics = {
-        path = "/metrics"
-        port = "9000"
-      }
-
+      volumes = [
+        {
+          name                        = "api-container-efs-storage"
+          container_path              = "/opt/api-container-data"
+          read_only                   = false
+        }
+      ]
     }
     # Add more containers as needed
   ]
-}
-
-variable "ecs_monitoring_enabled" {
-  description = "Install Prometheus and Grafana to monitor ECS"
-  type        = bool
-  default     = false
 }
 
 variable "alb_idle_timeout" {
@@ -392,9 +401,9 @@ variable "s3_bucket_list" {
   type = list(map(string))
   default = [
     {
-      name        = "static"
-      public      = true
-      replication = false
+      name       = "static"
+      public     = true
+      versioning = false
     }
     # Add more buckets as needed
   ]
@@ -410,4 +419,116 @@ variable "cloudtrail_enabled" {
 variable "cloudtrail_log_retention_days" {
   type    = number
   default = 365
+}
+
+variable "lambda_image_url" {
+  type    = string
+  default = null
+}
+
+variable "lambda_region" {
+  type    = string
+  default = null
+}
+
+variable "lambda_memory_size" {
+  description = "Lambda Function Memory Size"
+  type        = number
+  default     = 128
+}
+
+variable "aws_email_service" {
+  description = "Enable or disable AWS Email Service"
+  type        = bool
+  default     = false
+}
+
+variable "aws_email_domain" {
+  description = "Domain for AWS Email Service"
+  type        = string
+  default     = "exmapl.com"
+}
+
+variable "mail_from_alias" {
+  description = "Alias for Email from"
+  type        = string
+  default     = "mail.exmapl.com"
+}
+
+variable "elasticsearch_enabled" {
+  description = "Enable Elasticsearch module"
+  type        = bool
+  default     = false
+}
+
+variable "elasticsearch_instance_type" {
+  description = "Elasticsearch instance type"
+  type        = string
+  default     = "t3.small.elasticsearch"
+}
+
+variable "elasticsearch_ebs_volume_size" {
+  description = "Elasticsearch EBS volume size"
+  type        = number
+  default     = 10
+}
+
+variable "elasticsearch_version" {
+  description = "Elasticsearch version"
+  type        = string
+  default     = "7.10"
+}
+
+variable "lambda_bucket_name" {
+  type    = string
+  default = null
+}
+
+variable "ssm_secret_key" {
+  type    = string
+  default = null
+}
+
+variable "document_data_api_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_pdf_url" {
+  type    = string
+  default = null
+}
+
+variable "html_to_docx_url" {
+  type    = string
+  default = null
+}
+
+variable "lambda_edge_enabled" {
+  type    = bool
+  default = true
+}
+
+variable "efs_enabled" {
+  description = "Enable EFS for shared storage"
+  type        = bool
+  default     = false
+}
+
+variable "efs_performance_mode" {
+  description = "EFS performance mode"
+  type        = string
+  default     = "generalPurpose"
+}
+
+variable "efs_throughput_mode" {
+  description = "EFS throughput mode"
+  type        = string
+  default     = "bursting"
+}
+
+variable "efs_provisioned_throughput" {
+  description = "Provisioned throughput in MiB/s (only valid when throughput_mode is provisioned)"
+  type        = number
+  default     = null
 }

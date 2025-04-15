@@ -72,6 +72,6 @@ variable "prometheus_config_reloader_image" {
 }
 
 variable "grafana_image" {
-  type = string
+  type    = string
   default = "grafana/grafana:10.3.1"
 }

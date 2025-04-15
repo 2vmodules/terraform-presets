@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -43,7 +43,7 @@ variable "ami_filter" {
   type        = map(list(string))
 
   default = {
-    name                = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+    name                = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"]
     virtualization-type = ["hvm"]
   }
 }
@@ -63,7 +63,7 @@ variable "ami" {
 variable "instance_type" {
   type        = string
   description = "Instance type for the created machine"
-  default     = "t3.micro"
+  default     = "t4g.micro"
 }
 
 variable "allowed_tcp_ports" {

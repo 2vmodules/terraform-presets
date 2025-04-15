@@ -7,6 +7,7 @@ terraform {
     aws      = ">= 4.39.0"
     local    = ">= 2.2.2"
     null     = ">= 3.1.1"
+    template = ">= 2.2.0"
     random   = ">= 3.4.3"
   }
 }

@@ -1,6 +1,6 @@
 variable "region" {
   type    = string
-  default = "us-west-1"
+  default = "eu-central-1"
 }
 
 variable "env" {
@@ -18,7 +18,7 @@ variable "tags" {
 }
 
 variable "vpc_id" {
-  type    = string
+  type = string
 }
 
 variable "route53_zone" {
