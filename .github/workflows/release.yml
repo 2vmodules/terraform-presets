@@ -1,0 +1,23 @@
+name: Create Github Release
+
+on:
+  push:
+    branches:
+      - main
+
+
+jobs:
+  create_release:
+    runs-on: ubuntu-latest
+    name: Create Github Release
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Create Release
+        uses: release-drafter/release-drafter@v6
+        id: create-release
+        with:
+          publish: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
