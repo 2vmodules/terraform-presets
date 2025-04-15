@@ -93,27 +93,27 @@ variable "ecs_enabled" {
 
 variable "lambda_bucket_name" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "ssm_secret_key" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "document_data_api_url" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "html_to_pdf_url" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "html_to_docx_url" {
   type    = string
-  default = null
+  default = ""
 }
 
 variable "lambda_edge_enabled" {

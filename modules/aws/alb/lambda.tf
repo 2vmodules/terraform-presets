@@ -1,28 +1,3 @@
-resource "local_file" "lambda_function" {
-  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
-
-  content = templatefile(
-    "${path.module}/image-resize/index.js.tmpl",
-    {
-      env                   = var.env
-      name                  = var.name
-      lambda_bucket_name    = var.lambda_bucket_name
-      ssm_secret_key        = var.ssm_secret_key
-      document_data_api_url = var.document_data_api_url
-      html_to_pdf_url       = var.html_to_pdf_url
-      html_to_docx_url      = var.html_to_docx_url
-    }
-  )
-  filename = "${path.module}/image-resize/index.js"
-}
-
-data "archive_file" "lambda_function" {
-  type        = "zip"
-  source_dir  = "${path.module}/image-resize"
-  output_path = "image-resize.zip"
-  depends_on  = [local_file.lambda_function]
-}
-
 locals {
   repository_name = split("/", var.lambda_image_url)[1]
 }
@@ -140,7 +115,7 @@ resource "aws_iam_role_policy_attachment" "lambda_exec_attach" {
 }
 
 resource "aws_lambda_function_url" "image_resize_url" {
-  count              = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
   function_name      = aws_lambda_function.image_resize[count.index].function_name
   authorization_type = "NONE"
 
@@ -151,7 +126,7 @@ resource "aws_lambda_function_url" "image_resize_url" {
 }
 
 resource "aws_lambda_permission" "allow_cloudfront" {
-  count         = var.cdn_optimize_images ? 1 : 0
+  count = var.cdn_optimize_images && var.lambda_edge_enabled == false ? 1 : 0
   statement_id  = "AllowCloudFrontInvoke"
   action        = "lambda:InvokeFunctionUrl"
   function_name = aws_lambda_function.image_resize[count.index].function_name

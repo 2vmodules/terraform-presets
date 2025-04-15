@@ -196,13 +196,14 @@ variable "ubuntu_ami_name_pattern" {
 variable "instance_arch" {
   description = "The arch of EC2 Instance"
   type        = string
-  default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
+  default     = "arm64"
 }
 
 variable "ami_owners" {
   description = "The list of owners used to select the AMI of used instances."
   type        = list(string)
   default     = ["099720109477"] # Canonical
+}
 
 variable "efs_enabled" {
   description = "Enable EFS for shared storage"

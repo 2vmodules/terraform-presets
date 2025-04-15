@@ -94,6 +94,8 @@ module "alb" {
   idle_timeout = var.alb_idle_timeout
 
   #cdn_bucket_names = [module.s3[1].s3_bucket_bucket_regional_domain_name]
+  lambda_edge_enabled    = var.lambda_edge_enabled
+  ############# If using docker image for lambda, set lambda_edge_enabled to `false`:
   cdn_enabled            = var.cdn_enabled
   cdn_buckets            = local.public_bucket_list
   cdn_optimize_images    = var.cdn_optimize_images
@@ -102,7 +104,6 @@ module "alb" {
   lambda_memory_size     = var.lambda_memory_size
   lambda_private_subnets = module.vpc.private_subnets
   lambda_security_group  = [module.alb.alb_aws_security_group_id]
-  lambda_edge_enabled    = true
 }
 
 module "ecr" {

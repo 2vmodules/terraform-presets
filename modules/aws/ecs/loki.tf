@@ -1,7 +1,7 @@
 # EC2 instance for Loki and Grafana
 resource "aws_instance" "loki_grafana" {
   count                  = var.loki_enabled ? 1 : 0
-  ami                    = data.aws_ami.ubuntu.id
+  ami                    = data.aws_ami.ubuntu[count.index].id
   instance_type          = var.loki_ec2_instance_type
   key_name               = var.loki_ec2_key_name
   subnet_id              = var.vpc_subnets[0]
@@ -150,6 +150,7 @@ resource "aws_iam_role_policy_attachment" "ecs_loki_logging" {
 }
 
 data "aws_ami" "ubuntu" {
+  count       = var.loki_enabled ? 1 : 0
   owners      = var.ami_owners
   most_recent = true
 

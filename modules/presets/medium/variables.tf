@@ -574,7 +574,7 @@ variable "instance_arch" {
   description = "The arch of EC2 Instance"
   type        = string
   default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
-
+}
 variable "lambda_edge_enabled" {
   type    = bool
   default = true
