@@ -106,9 +106,15 @@ variable "cluster_mode_replicas_per_node_group" {
 }
 
 variable "snapshot_retention_limit" {
+  description = "The number of days for which ElastiCache will retain automatic cache cluster snapshots"
   type        = number
-  description = "The number of days for which ElastiCache will retain automatic cache cluster snapshots before deleting them."
-  default     = 0
+  default     = 7
+}
+
+variable "snapshot_window" {
+  description = "The daily time range (in UTC) during which ElastiCache will begin taking a daily snapshot"
+  type        = string
+  default     = "04:00-05:00"
 }
 
 variable "kms_ssm_key_arn" {

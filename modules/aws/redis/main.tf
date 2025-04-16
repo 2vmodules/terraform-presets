@@ -71,6 +71,7 @@ module "redis" {
   replication_group_id                 = substr(local.name, 0, min(length(local.name), 20)) # needs to be <20 characters long
   automatic_failover_enabled           = var.automatic_failover_enabled
   snapshot_retention_limit             = var.snapshot_retention_limit
+  snapshot_window                      = var.snapshot_window
   cloudwatch_metric_alarms_enabled     = true
 
   #workaround for auth issue
