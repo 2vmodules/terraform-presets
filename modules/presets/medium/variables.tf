@@ -353,12 +353,6 @@ variable "redis_cluster_mode_replicas_per_node_group" {
   default     = 0
 }
 
-variable "redis_snapshot_retention_limit" {
-  type        = number
-  description = "The number of days for which ElastiCache will retain automatic cache cluster snapshots before deleting them."
-  default     = 0
-}
-
 variable "redis_kms_ssm_key_arn" {
   type        = string
   description = "ARN of the AWS KMS key used for SSM encryption"
@@ -381,6 +375,18 @@ variable "redis_extra_allowed_cidr_blocks" {
   description = "extra allowed cidr blocks"
   type        = string
   default     = "10.0.0.0/8"
+}
+
+variable "redis_snapshot_retention_limit" {
+  description = "The number of days for which ElastiCache will retain automatic cache cluster snapshots"
+  type        = number
+  default     = 7
+}
+
+variable "redis_snapshot_window" {
+  description = "The daily time range (in UTC) during which ElastiCache will begin taking a daily snapshot"
+  type        = string
+  default     = "04:00-05:00"
 }
 
 ### CDN ###

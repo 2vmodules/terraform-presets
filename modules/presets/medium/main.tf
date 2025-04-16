@@ -221,6 +221,7 @@ module "redis" {
   automatic_failover_enabled           = var.redis_automatic_failover_enabled
   cluster_mode_replicas_per_node_group = var.redis_cluster_mode_replicas_per_node_group
   snapshot_retention_limit             = var.redis_snapshot_retention_limit
+  snapshot_window                      = var.redis_snapshot_window
   kms_ssm_key_arn                      = var.redis_kms_ssm_key_arn
   allow_vpc_cidr_block                 = var.redis_allow_vpc_cidr_block
   allow_vpc_private_cidr_blocks        = var.redis_allow_vpc_private_cidr_blocks
