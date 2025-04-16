@@ -2,7 +2,7 @@
 ## CloudFront distribution
 ########################################################################################################################
 
-resource "aws_cloudfront_distribution" "default" {
+resource "aws_cloudfront_distribution" "default_edge" {
   count           = var.cdn_enabled && var.lambda_edge_enabled ? 1 : 0
   comment         = "${title(var.name)} CloudFront Distribution"
   enabled         = true
@@ -57,7 +57,7 @@ resource "aws_cloudfront_distribution" "default" {
 
         content {
           event_type = "origin-response"
-          lambda_arn = aws_lambda_function.image_resize[count.index].qualified_arn
+          lambda_arn = aws_lambda_function.image_resize_edge[count.index].qualified_arn
         }
       }
 
@@ -70,7 +70,7 @@ resource "aws_cloudfront_distribution" "default" {
 
     content {
       domain_name              = bucket.value["domain_name"]
-      origin_access_control_id = aws_cloudfront_origin_access_control.default[0].id
+      origin_access_control_id = aws_cloudfront_origin_access_control.default_edge[0].id
       origin_id                = bucket.value["name"]
     }
   }
@@ -123,7 +123,7 @@ resource "aws_cloudfront_distribution" "default" {
   tags = local.tags
 }
 
-resource "aws_cloudfront_origin_access_control" "default" {
+resource "aws_cloudfront_origin_access_control" "default_edge" {
   count                             = var.cdn_enabled && var.lambda_edge_enabled ? 1 : 0
   name                              = "default"
   description                       = "Default Policy"

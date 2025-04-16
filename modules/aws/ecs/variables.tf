@@ -133,6 +133,78 @@ variable "containers" {
   ]
 }
 
+variable "loki_enabled" {
+  type        = bool
+  default     = false
+  description = "Whether to enable Loki logging for ECS tasks"
+}
+
+variable "grafana_domain" {
+  type        = string
+  default     = "grafana.example.com"
+  description = "Domain name for Grafana (required if loki_enabled is true)"
+}
+
+variable "loki_ec2_instance_type" {
+  type        = string
+  default     = "t3.medium"
+  description = "Instance type for EC2 running Loki and Grafana"
+}
+
+variable "loki_ec2_key_name" {
+  type        = string
+  default     = ""
+  description = "SSH key pair name for EC2 instance"
+}
+
+variable "grafana_admin_password" {
+  type        = string
+  default     = "StrongPassword"
+  description = "The Secure Password for Grafana"
+}
+
+variable "alert_manager_url" {
+  type        = string
+  default     = "http://localhost:9093"
+  description = "The Alert manager url"
+}
+
+variable "loki_instance_volume_size" {
+  type        = number
+  default     = 10
+  description = "The Loki Ec2 Instance Disk Size"
+}
+
+variable "fluentbit_image" {
+  type        = string
+  default     = "grafana/fluent-bit-plugin-loki:1.5.0-amd64"
+  description = "The Fluent Bit Docker Image"
+}
+
+variable "fluentbit_memoryreservation" {
+  type        = number
+  default     = 50
+  description = "The Fluent Bit Memory Reservation"
+}
+
+variable "ubuntu_ami_name_pattern" {
+  description = "The name pattern for Ubuntu AMI"
+  type        = string
+  default     = "ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-arm64-server-*"
+}
+
+variable "instance_arch" {
+  description = "The arch of EC2 Instance"
+  type        = string
+  default     = "arm64"
+}
+
+variable "ami_owners" {
+  description = "The list of owners used to select the AMI of used instances."
+  type        = list(string)
+  default     = ["099720109477"] # Canonical
+}
+
 variable "efs_enabled" {
   description = "Enable EFS for shared storage"
   type        = bool

@@ -1,26 +1,30 @@
-resource "local_file" "lambda_function" {
+resource "local_file" "lambda_function_edge" {
   count = var.cdn_optimize_images && var.lambda_edge_enabled ? 1 : 0
 
   content = templatefile(
     "${path.module}/image-resize/index.js.tmpl",
     {
-      env    = var.env
-      name   = var.name
-      region = var.region
+      env                   = var.env
+      name                  = var.name
+      lambda_bucket_name    = var.lambda_bucket_name
+      ssm_secret_key        = var.ssm_secret_key
+      document_data_api_url = var.document_data_api_url
+      html_to_pdf_url       = var.html_to_pdf_url
+      html_to_docx_url      = var.html_to_docx_url
     }
   )
   filename = "${path.module}/image-resize/index.js"
 }
 
-data "archive_file" "lambda_function" {
+data "archive_file" "lambda_function_edge" {
   count       = var.cdn_optimize_images && var.lambda_edge_enabled ? 1 : 0
   type        = "zip"
   source_dir  = "${path.module}/image-resize"
   output_path = "image-resize.zip"
-  depends_on  = [local_file.lambda_function]
+  depends_on  = [local_file.lambda_function_edge]
 }
 
-resource "aws_lambda_function" "image_resize" {
+resource "aws_lambda_function" "image_resize_edge" {
   count = var.cdn_optimize_images && var.lambda_edge_enabled ? 1 : 0
 
   provider = aws.us_east_1 ### Lambda@Edge requires us-east-1 region
@@ -28,14 +32,14 @@ resource "aws_lambda_function" "image_resize" {
   function_name    = "image-resize"
   handler          = "index.handler"
   runtime          = "nodejs20.x"
-  filename         = data.archive_file.lambda_function[0].output_path
-  source_code_hash = data.archive_file.lambda_function[0].output_base64sha256
-  role             = aws_iam_role.lambda_exec_role[count.index].arn
+  filename         = data.archive_file.lambda_function_edge[0].output_path
+  source_code_hash = data.archive_file.lambda_function_edge[0].output_base64sha256
+  role             = aws_iam_role.lambda_exec_role_edge[count.index].arn
   publish          = true
   timeout          = 15
 }
 
-resource "aws_iam_role" "lambda_exec_role" {
+resource "aws_iam_role" "lambda_exec_role_edge" {
   count = var.cdn_optimize_images && var.lambda_edge_enabled ? 1 : 0
 
   name = "lambda_exec_role"
@@ -61,7 +65,7 @@ resource "aws_iam_role" "lambda_exec_role" {
   })
 }
 
-resource "aws_iam_policy" "lambda_exec_policy" {
+resource "aws_iam_policy" "lambda_exec_policy_edge" {
   count = var.cdn_optimize_images && var.lambda_edge_enabled ? 1 : 0
 
   name = "lambda_exec_policy"
@@ -108,9 +112,9 @@ resource "aws_iam_policy" "lambda_exec_policy" {
   })
 }
 
-resource "aws_iam_role_policy_attachment" "lambda_exec_attach" {
+resource "aws_iam_role_policy_attachment" "lambda_exec_attach_edge" {
   count = var.cdn_optimize_images && var.lambda_edge_enabled ? 1 : 0
 
-  policy_arn = aws_iam_policy.lambda_exec_policy[count.index].arn
-  role       = aws_iam_role.lambda_exec_role[count.index].name
+  policy_arn = aws_iam_policy.lambda_exec_policy_edge[count.index].arn
+  role       = aws_iam_role.lambda_exec_role_edge[count.index].name
 }

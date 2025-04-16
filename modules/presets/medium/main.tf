@@ -94,6 +94,8 @@ module "alb" {
   idle_timeout = var.alb_idle_timeout
 
   #cdn_bucket_names = [module.s3[1].s3_bucket_bucket_regional_domain_name]
+  lambda_edge_enabled    = var.lambda_edge_enabled
+  ############# If using docker image for lambda, set lambda_edge_enabled to `false`:
   cdn_enabled            = var.cdn_enabled
   cdn_buckets            = local.public_bucket_list
   cdn_optimize_images    = var.cdn_optimize_images
@@ -102,7 +104,6 @@ module "alb" {
   lambda_memory_size     = var.lambda_memory_size
   lambda_private_subnets = module.vpc.private_subnets
   lambda_security_group  = [module.alb.alb_aws_security_group_id]
-  lambda_edge_enabled    = true
 }
 
 module "ecr" {
@@ -146,10 +147,15 @@ module "ecs" {
   cluster_name = var.ecs_cluster_name
   containers   = local.final_ecs_containers
 
+  loki_enabled             = var.loki_enabled
+  grafana_domain           = var.grafana_domain
+  loki_ec2_instance_type   = var.loki_ec2_instance_type
+  loki_ec2_key_name        = var.loki_ec2_key_name
+  grafana_admin_password   = var.grafana_admin_password
+
   efs_enabled          = var.efs_enabled
   efs_performance_mode = var.efs_performance_mode
   efs_throughput_mode  = var.efs_throughput_mode
-
 
 }
 

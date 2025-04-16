@@ -11,7 +11,7 @@ const ssm = new AWS.SSM();
 // set your S3 bucket name here
 const BUCKET = ${lambda_bucket_name};
 const SSM_SECRET_KEY = ${ssm_secret_key};
-const GET_DOCUMENT_DATA_API_URL = ${document_data_api_url}};
+const GET_DOCUMENT_DATA_API_URL = ${document_data_api_url};
 const HTML_TO_PDF_URL = ${html_to_pdf_url};
 const HTML_TO_DOCX_URL = ${html_to_docx_url};
 
@@ -174,7 +174,7 @@ function getDocumentParams(path) {
     documentId: groups.folderName,
     isDocument,
     isScreenshot,
-    pathToDocumentFile: `${groups.type}/${groups.folderName}/${groups.fileName}-${groups.version}.${isScreenshot ? 'pdf' : groups.ext}`,
+    pathToDocumentFile: `$${groups.type}/$${groups.folderName}/$${groups.fileName}-$${groups.version}.$${isScreenshot ? "pdf" : groups.ext}`,
   }
 }
 
@@ -212,14 +212,14 @@ async function getSecretKey() {
 }
 
 function generateSignatureForDocument(name, version, secretKey) {
-  const signatureString = `${name}-${version}-${secretKey}`
+  const signatureString = `$${name}-$${version}-$${secretKey}`
 
   return crypto.createHash('sha256').update(signatureString).digest('hex')
 }
 
 function generateSignature(width, height, quality, secretKey) {
-  const resizeParams    = `${width}x${height}-${quality}`
-  const signatureString = `${resizeParams}${secretKey}`
+  const resizeParams    = `$${width}x$${height}-$${quality}`
+  const signatureString = `$${resizeParams}$${secretKey}`
 
   return crypto.createHash('sha256').update(signatureString).digest('hex')
 }
